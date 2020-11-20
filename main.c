@@ -142,6 +142,22 @@ static vk_render_pass _3d_create_render_pass(vk_device device)
 	return render_pass;
 }
 
+static uint32_t find_memory_type(vk_physical_device	  physical_device,
+				 vk_memory_property_flags desired)
+{
+	vk_physical_device_memory_properties p;
+	vk_get_physical_device_memory_properties(physical_device, &p);
+
+	for (uint32_t i = 0; i < p.memory_type_count; i++) {
+		vk_memory_property_flags got = p.memory_types[i].property_flags;
+		got &= desired;
+		if (got == desired)
+			return i;
+	}
+
+	return UINT32_MAX;
+}
+
 int main()
 {
 	_putenv("VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation");
@@ -224,6 +240,14 @@ int main()
 	assert(surface_supported);
 
 	vk_render_pass render_pass = _3d_create_render_pass(device);
+
+	vk_memory_property_flags device_local_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	vk_memory_property_flags host_visible_flags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
+						      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+	uint32_t device_local_index = find_memory_type(physical_device, device_local_flags);
+	uint32_t host_visible_index = find_memory_type(physical_device, host_visible_flags);
+	printf("Device local memory type index: %u\n", device_local_index);
+	printf("Host visible memory type index: %u\n", host_visible_index);
 
 	while (!wnd_process_msgs()) {
 	}
