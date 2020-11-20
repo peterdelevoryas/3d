@@ -16,7 +16,7 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 #define alloc(p, c)   malloc(sizeof(*p) * c)
 
-static LRESULT CALLBACK wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+static LRESULT CALLBACK win32_window_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
 	switch (msg) {
 	case WM_CLOSE:
@@ -33,7 +33,7 @@ static LRESULT CALLBACK wnd_proc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 	return DefWindowProcW(hwnd, msg, wparam, lparam);
 }
 
-static HWND wnd_init(HINSTANCE hinst, int width, int height)
+static HWND win32_create_window(HINSTANCE hinst, int width, int height)
 {
 	int screen_width  = GetSystemMetrics(SM_CXSCREEN);
 	int screen_height = GetSystemMetrics(SM_CYSCREEN);
@@ -42,7 +42,7 @@ static HWND wnd_init(HINSTANCE hinst, int width, int height)
 
 	LPCWSTR	 class_name = L"3d_window";
 	WNDCLASS wc	    = {};
-	wc.lpfnWndProc	    = wnd_proc;
+	wc.lpfnWndProc	    = win32_window_callback;
 	wc.hInstance	    = hinst;
 	wc.lpszClassName    = class_name;
 	RegisterClass(&wc);
@@ -53,7 +53,7 @@ static HWND wnd_init(HINSTANCE hinst, int width, int height)
 	return hwnd;
 }
 
-static int wnd_process_msgs()
+static int win32_process_messages()
 {
 	MSG msg = {};
 	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -185,7 +185,7 @@ int main()
 	printf("Using gpu '%s'\n", physical_device_properties.device_name);
 
 	HINSTANCE hinstance = GetModuleHandle(NULL);
-	HWND	  hwnd	    = wnd_init(hinstance, WIDTH, HEIGHT);
+	HWND	  hwnd	    = win32_create_window(hinstance, WIDTH, HEIGHT);
 	ShowWindow(hwnd, SW_SHOW);
 
 	vk_win32_surface_create_info_khr surface_info = {};
@@ -249,7 +249,7 @@ int main()
 	printf("Device local memory type index: %u\n", device_local_index);
 	printf("Host visible memory type index: %u\n", host_visible_index);
 
-	while (!wnd_process_msgs()) {
+	while (!win32_process_messages()) {
 	}
 
 	vk_destroy_render_pass(device, render_pass, NULL);
