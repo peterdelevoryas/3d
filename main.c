@@ -65,7 +65,74 @@ static int win32_process_messages()
 	return 0;
 }
 
-static vk_render_pass _3d_create_render_pass(vk_device device)
+static vk_instance create_instance()
+{
+	const char *instance_extensions[] = {
+		"VK_KHR_surface",
+		"VK_KHR_win32_surface",
+		"VK_EXT_debug_report",
+		"VK_EXT_debug_utils",
+	};
+	vk_instance_create_info instance_info	 = {};
+	instance_info.s_type			 = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+	instance_info.enabled_extension_count	 = ARRAY_SIZE(instance_extensions);
+	instance_info.pp_enabled_extension_names = instance_extensions;
+	vk_instance instance;
+	vk_create_instance(&instance_info, NULL, &instance);
+
+	return instance;
+}
+
+static vk_physical_device select_physical_device(vk_instance instance)
+{
+	uint32_t	   physical_device_count = 1;
+	vk_physical_device physical_device;
+	vk_enumerate_physical_devices(instance, &physical_device_count, &physical_device);
+	assert(physical_device);
+
+	vk_physical_device_properties physical_device_properties;
+	vk_get_physical_device_properties(physical_device, &physical_device_properties);
+	printf("Selected physical device '%s'\n", physical_device_properties.device_name);
+
+	return physical_device;
+}
+
+static uint32_t select_queue_family(vk_physical_device physical_device)
+{
+	uint32_t queue_family_count = 0;
+	vk_get_physical_device_queue_family_properties(physical_device, &queue_family_count, NULL);
+	assert(queue_family_count);
+
+	vk_queue_family_properties *queue_families = NULL;
+	queue_families				   = alloc(queue_families, queue_family_count);
+
+	uint32_t queue_family_index = UINT32_MAX;
+	for (uint32_t i = 0; i < queue_family_count; i++) {
+		vk_queue_flag_bits flags = queue_families[i].queue_flags;
+		if (flags & VK_QUEUE_GRAPHICS_BIT && flags & VK_QUEUE_TRANSFER_BIT) {
+			assert(queue_families[i].queue_count);
+			queue_family_index = i;
+			break;
+		}
+	}
+	free(queue_families);
+	return queue_family_index;
+}
+
+static vk_surface_khr create_surface(vk_instance instance, HINSTANCE hinstance, HWND hwnd)
+{
+	vk_win32_surface_create_info_khr surface_info = {};
+	surface_info.s_type    = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+	surface_info.hinstance = hinstance;
+	surface_info.hwnd      = hwnd;
+
+	vk_surface_khr surface;
+	vk_create_win32_surface_khr(instance, &surface_info, NULL, &surface);
+
+	return surface;
+}
+
+static vk_render_pass create_render_pass(vk_device device)
 {
 	vk_attachment_description color_attachment = {};
 	color_attachment.flags			   = 0;
@@ -162,56 +229,15 @@ int main()
 {
 	_putenv("VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation");
 
-	const char *instance_extensions[] = {
-		"VK_KHR_surface",
-		"VK_KHR_win32_surface",
-		"VK_EXT_debug_report",
-		"VK_EXT_debug_utils",
-	};
-	vk_instance_create_info instance_info	 = {};
-	instance_info.s_type			 = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-	instance_info.enabled_extension_count	 = ARRAY_SIZE(instance_extensions);
-	instance_info.pp_enabled_extension_names = instance_extensions;
-	vk_instance instance;
-	vk_create_instance(&instance_info, NULL, &instance);
-
-	uint32_t	   physical_device_count = 1;
-	vk_physical_device physical_device;
-	vk_enumerate_physical_devices(instance, &physical_device_count, &physical_device);
-	assert(physical_device);
-
-	vk_physical_device_properties physical_device_properties;
-	vk_get_physical_device_properties(physical_device, &physical_device_properties);
-	printf("Using gpu '%s'\n", physical_device_properties.device_name);
+	vk_instance	   instance	   = create_instance();
+	vk_physical_device physical_device = select_physical_device(instance);
 
 	HINSTANCE hinstance = GetModuleHandle(NULL);
 	HWND	  hwnd	    = win32_create_window(hinstance, WIDTH, HEIGHT);
 	ShowWindow(hwnd, SW_SHOW);
 
-	vk_win32_surface_create_info_khr surface_info = {};
-	surface_info.s_type    = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-	surface_info.hinstance = hinstance;
-	surface_info.hwnd      = hwnd;
-	vk_surface_khr surface;
-	vk_create_win32_surface_khr(instance, &surface_info, NULL, &surface);
-
-	uint32_t queue_family_count = 0;
-	vk_get_physical_device_queue_family_properties(physical_device, &queue_family_count, NULL);
-	assert(queue_family_count);
-
-	vk_queue_family_properties *queue_families = NULL;
-	queue_families				   = alloc(queue_families, queue_family_count);
-
-	uint32_t queue_family_index = UINT32_MAX;
-	for (uint32_t i = 0; i < queue_family_count; i++) {
-		vk_queue_flag_bits flags = queue_families[i].queue_flags;
-		if (flags & VK_QUEUE_GRAPHICS_BIT && flags & VK_QUEUE_TRANSFER_BIT) {
-			assert(queue_families[i].queue_count);
-			queue_family_index = i;
-			break;
-		}
-	}
-	free(queue_families);
+	vk_surface_khr surface		  = create_surface(instance, hinstance, hwnd);
+	uint32_t       queue_family_index = select_queue_family(physical_device);
 
 	vk_physical_device_features physical_device_features;
 	vk_get_physical_device_features(physical_device, &physical_device_features);
@@ -239,7 +265,7 @@ int main()
 						   &surface_supported);
 	assert(surface_supported);
 
-	vk_render_pass render_pass = _3d_create_render_pass(device);
+	vk_render_pass render_pass = create_render_pass(device);
 
 	vk_memory_property_flags device_local_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 	vk_memory_property_flags host_visible_flags = VK_MEMORY_PROPERTY_HOST_COHERENT_BIT |
