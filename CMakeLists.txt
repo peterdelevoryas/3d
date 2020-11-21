@@ -4,4 +4,5 @@ find_package(Vulkan REQUIRED)
 
 add_executable(3d WIN32 main.c)
 target_link_libraries(3d Vulkan::Vulkan)
+target_link_libraries(3d xcb)
 target_compile_options(3d PUBLIC -ffast-math)
