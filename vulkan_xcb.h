@@ -29,27 +29,22 @@ typedef struct vk_xcb_surface_create_info_khr {
 } vk_xcb_surface_create_info_khr;
 
 typedef vk_result(VKAPI_PTR *pfn_vk_create_xcb_surface_khr)(
-	vk_instance instance,
-	const vk_xcb_surface_create_info_khr *p_create_info,
+	vk_instance instance, const vk_xcb_surface_create_info_khr *p_create_info,
 	const vk_allocation_callbacks *p_allocator, vk_surface_khr *p_surface);
-typedef vk_bool32(
-	VKAPI_PTR *pfn_vk_get_physical_device_xcb_presentation_support_khr)(
+typedef vk_bool32(VKAPI_PTR *pfn_vk_get_physical_device_xcb_presentation_support_khr)(
 	vk_physical_device physical_device, uint32_t queue_family_index,
 	xcb_connection_t *connection, xcb_visualid_t visual_id);
 
 #ifndef VK_NO_PROTOTYPES
-VKAPI_ATTR vk_result VKAPI_CALL vk_create_xcb_surface_khr(
-	vk_instance instance,
-	const vk_xcb_surface_create_info_khr *p_create_info,
-	const vk_allocation_callbacks *p_allocator,
-	vk_surface_khr *p_surface) __asm("vkCreateXcbSurfaceKHR");
+VKAPI_ATTR vk_result VKAPI_CALL
+vk_create_xcb_surface_khr(vk_instance instance, const vk_xcb_surface_create_info_khr *p_create_info,
+			  const vk_allocation_callbacks *p_allocator,
+			  vk_surface_khr *p_surface) __asm("vkCreateXcbSurfaceKHR");
 
-VKAPI_ATTR vk_bool32 VKAPI_CALL
-vk_get_physical_device_xcb_presentation_support_khr(
+VKAPI_ATTR vk_bool32 VKAPI_CALL vk_get_physical_device_xcb_presentation_support_khr(
 	vk_physical_device physical_device, uint32_t queue_family_index,
 	xcb_connection_t *connection,
-	xcb_visualid_t
-		visual_id) __asm("vkGetPhysicalDeviceXcbPresentationSupportKHR");
+	xcb_visualid_t visual_id) __asm("vkGetPhysicalDeviceXcbPresentationSupportKHR");
 #endif
 
 #ifdef __cplusplus

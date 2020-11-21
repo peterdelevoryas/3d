@@ -29,31 +29,25 @@ typedef struct vk_win32_surface_create_info_khr {
 } vk_win32_surface_create_info_khr;
 
 typedef vk_result(VKAPI_PTR *pfn_vk_create_win32_surface_khr)(
-	vk_instance instance,
-	const vk_win32_surface_create_info_khr *p_create_info,
+	vk_instance instance, const vk_win32_surface_create_info_khr *p_create_info,
 	const vk_allocation_callbacks *p_allocator, vk_surface_khr *p_surface);
-typedef vk_bool32(
-	VKAPI_PTR *pfn_vk_get_physical_device_win32_presentation_support_khr)(
+typedef vk_bool32(VKAPI_PTR *pfn_vk_get_physical_device_win32_presentation_support_khr)(
 	vk_physical_device physical_device, uint32_t queue_family_index);
 
 #ifndef VK_NO_PROTOTYPES
 VKAPI_ATTR vk_result VKAPI_CALL vk_create_win32_surface_khr(
-	vk_instance instance,
-	const vk_win32_surface_create_info_khr *p_create_info,
+	vk_instance instance, const vk_win32_surface_create_info_khr *p_create_info,
 	const vk_allocation_callbacks *p_allocator,
 	vk_surface_khr *p_surface) __asm("vkCreateWin32SurfaceKHR");
 
-VKAPI_ATTR vk_bool32 VKAPI_CALL
-vk_get_physical_device_win32_presentation_support_khr(
+VKAPI_ATTR vk_bool32 VKAPI_CALL vk_get_physical_device_win32_presentation_support_khr(
 	vk_physical_device physical_device,
-	uint32_t
-		queue_family_index) __asm("vkGetPhysicalDeviceWin32PresentationSupportKHR");
+	uint32_t queue_family_index) __asm("vkGetPhysicalDeviceWin32PresentationSupportKHR");
 #endif
 
 #define vk_khr_external_memory_win32 1
 #define VK_KHR_EXTERNAL_MEMORY_WIN32_SPEC_VERSION 1
-#define VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME \
-	"VK_KHR_external_memory_win32"
+#define VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME "VK_KHR_external_memory_win32"
 typedef struct vk_import_memory_win32_handle_info_khr {
 	vk_structure_type s_type;
 	const void *p_next;
@@ -84,25 +78,21 @@ typedef struct vk_memory_get_win32_handle_info_khr {
 } vk_memory_get_win32_handle_info_khr;
 
 typedef vk_result(VKAPI_PTR *pfn_vk_get_memory_win32_handle_khr)(
-	vk_device device,
-	const vk_memory_get_win32_handle_info_khr *p_get_win32_handle_info,
+	vk_device device, const vk_memory_get_win32_handle_info_khr *p_get_win32_handle_info,
 	HANDLE *p_handle);
 typedef vk_result(VKAPI_PTR *pfn_vk_get_memory_win32_handle_properties_khr)(
-	vk_device device, vk_external_memory_handle_type_flag_bits handle_type,
-	HANDLE handle,
+	vk_device device, vk_external_memory_handle_type_flag_bits handle_type, HANDLE handle,
 	vk_memory_win32_handle_properties_khr *p_memory_win32_handle_properties);
 
 #ifndef VK_NO_PROTOTYPES
 VKAPI_ATTR vk_result VKAPI_CALL vk_get_memory_win32_handle_khr(
-	vk_device device,
-	const vk_memory_get_win32_handle_info_khr *p_get_win32_handle_info,
+	vk_device device, const vk_memory_get_win32_handle_info_khr *p_get_win32_handle_info,
 	HANDLE *p_handle) __asm("vkGetMemoryWin32HandleKHR");
 
 VKAPI_ATTR vk_result VKAPI_CALL vk_get_memory_win32_handle_properties_khr(
-	vk_device device, vk_external_memory_handle_type_flag_bits handle_type,
-	HANDLE handle,
-	vk_memory_win32_handle_properties_khr *
-		p_memory_win32_handle_properties) __asm("vkGetMemoryWin32HandlePropertiesKHR");
+	vk_device device, vk_external_memory_handle_type_flag_bits handle_type, HANDLE handle,
+	vk_memory_win32_handle_properties_khr
+		*p_memory_win32_handle_properties) __asm("vkGetMemoryWin32HandlePropertiesKHR");
 #endif
 
 #define vk_khr_win32_keyed_mutex 1
@@ -122,8 +112,7 @@ typedef struct vk_win32_keyed_mutex_acquire_release_info_khr {
 
 #define vk_khr_external_semaphore_win32 1
 #define VK_KHR_EXTERNAL_SEMAPHORE_WIN32_SPEC_VERSION 1
-#define VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME \
-	"VK_KHR_external_semaphore_win32"
+#define VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME "VK_KHR_external_semaphore_win32"
 typedef struct vk_import_semaphore_win32_handle_info_khr {
 	vk_structure_type s_type;
 	const void *p_next;
@@ -159,22 +148,20 @@ typedef struct vk_semaphore_get_win32_handle_info_khr {
 } vk_semaphore_get_win32_handle_info_khr;
 
 typedef vk_result(VKAPI_PTR *pfn_vk_import_semaphore_win32_handle_khr)(
-	vk_device device, const vk_import_semaphore_win32_handle_info_khr
-				  *p_import_semaphore_win32_handle_info);
-typedef vk_result(VKAPI_PTR *pfn_vk_get_semaphore_win32_handle_khr)(
 	vk_device device,
-	const vk_semaphore_get_win32_handle_info_khr *p_get_win32_handle_info,
+	const vk_import_semaphore_win32_handle_info_khr *p_import_semaphore_win32_handle_info);
+typedef vk_result(VKAPI_PTR *pfn_vk_get_semaphore_win32_handle_khr)(
+	vk_device device, const vk_semaphore_get_win32_handle_info_khr *p_get_win32_handle_info,
 	HANDLE *p_handle);
 
 #ifndef VK_NO_PROTOTYPES
 VKAPI_ATTR vk_result VKAPI_CALL vk_import_semaphore_win32_handle_khr(
 	vk_device device,
-	const vk_import_semaphore_win32_handle_info_khr *
-		p_import_semaphore_win32_handle_info) __asm("vkImportSemaphoreWin32HandleKHR");
+	const vk_import_semaphore_win32_handle_info_khr
+		*p_import_semaphore_win32_handle_info) __asm("vkImportSemaphoreWin32HandleKHR");
 
 VKAPI_ATTR vk_result VKAPI_CALL vk_get_semaphore_win32_handle_khr(
-	vk_device device,
-	const vk_semaphore_get_win32_handle_info_khr *p_get_win32_handle_info,
+	vk_device device, const vk_semaphore_get_win32_handle_info_khr *p_get_win32_handle_info,
 	HANDLE *p_handle) __asm("vkGetSemaphoreWin32HandleKHR");
 #endif
 
@@ -207,22 +194,20 @@ typedef struct vk_fence_get_win32_handle_info_khr {
 } vk_fence_get_win32_handle_info_khr;
 
 typedef vk_result(VKAPI_PTR *pfn_vk_import_fence_win32_handle_khr)(
-	vk_device device, const vk_import_fence_win32_handle_info_khr
-				  *p_import_fence_win32_handle_info);
-typedef vk_result(VKAPI_PTR *pfn_vk_get_fence_win32_handle_khr)(
 	vk_device device,
-	const vk_fence_get_win32_handle_info_khr *p_get_win32_handle_info,
+	const vk_import_fence_win32_handle_info_khr *p_import_fence_win32_handle_info);
+typedef vk_result(VKAPI_PTR *pfn_vk_get_fence_win32_handle_khr)(
+	vk_device device, const vk_fence_get_win32_handle_info_khr *p_get_win32_handle_info,
 	HANDLE *p_handle);
 
 #ifndef VK_NO_PROTOTYPES
 VKAPI_ATTR vk_result VKAPI_CALL vk_import_fence_win32_handle_khr(
 	vk_device device,
-	const vk_import_fence_win32_handle_info_khr *
-		p_import_fence_win32_handle_info) __asm("vkImportFenceWin32HandleKHR");
+	const vk_import_fence_win32_handle_info_khr
+		*p_import_fence_win32_handle_info) __asm("vkImportFenceWin32HandleKHR");
 
 VKAPI_ATTR vk_result VKAPI_CALL vk_get_fence_win32_handle_khr(
-	vk_device device,
-	const vk_fence_get_win32_handle_info_khr *p_get_win32_handle_info,
+	vk_device device, const vk_fence_get_win32_handle_info_khr *p_get_win32_handle_info,
 	HANDLE *p_handle) __asm("vkGetFenceWin32HandleKHR");
 #endif
 
@@ -248,10 +233,10 @@ typedef vk_result(VKAPI_PTR *pfn_vk_get_memory_win32_handle_nv)(
 	vk_external_memory_handle_type_flags_nv handle_type, HANDLE *p_handle);
 
 #ifndef VK_NO_PROTOTYPES
-VKAPI_ATTR vk_result VKAPI_CALL vk_get_memory_win32_handle_nv(
-	vk_device device, vk_device_memory memory,
-	vk_external_memory_handle_type_flags_nv handle_type,
-	HANDLE *p_handle) __asm("vkGetMemoryWin32HandleNV");
+VKAPI_ATTR vk_result VKAPI_CALL
+vk_get_memory_win32_handle_nv(vk_device device, vk_device_memory memory,
+			      vk_external_memory_handle_type_flags_nv handle_type,
+			      HANDLE *p_handle) __asm("vkGetMemoryWin32HandleNV");
 #endif
 
 #define vk_nv_win32_keyed_mutex 1
@@ -271,8 +256,7 @@ typedef struct vk_win32_keyed_mutex_acquire_release_info_nv {
 
 #define vk_ext_full_screen_exclusive 1
 #define VK_EXT_FULL_SCREEN_EXCLUSIVE_SPEC_VERSION 4
-#define VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME \
-	"VK_EXT_full_screen_exclusive"
+#define VK_EXT_FULL_SCREEN_EXCLUSIVE_EXTENSION_NAME "VK_EXT_full_screen_exclusive"
 
 typedef enum vk_full_screen_exclusive_ext {
 	VK_FULL_SCREEN_EXCLUSIVE_DEFAULT_EXT		    = 0,
@@ -299,39 +283,32 @@ typedef struct vk_surface_full_screen_exclusive_win32_info_ext {
 	HMONITOR hmonitor;
 } vk_surface_full_screen_exclusive_win32_info_ext;
 
-typedef vk_result(
-	VKAPI_PTR *pfn_vk_get_physical_device_surface_present_modes2ext)(
+typedef vk_result(VKAPI_PTR *pfn_vk_get_physical_device_surface_present_modes2ext)(
 	vk_physical_device physical_device,
-	const vk_physical_device_surface_info2khr *p_surface_info,
-	uint32_t *p_present_mode_count, vk_present_mode_khr *p_present_modes);
+	const vk_physical_device_surface_info2khr *p_surface_info, uint32_t *p_present_mode_count,
+	vk_present_mode_khr *p_present_modes);
 typedef vk_result(VKAPI_PTR *pfn_vk_acquire_full_screen_exclusive_mode_ext)(
 	vk_device device, vk_swapchain_khr swapchain);
 typedef vk_result(VKAPI_PTR *pfn_vk_release_full_screen_exclusive_mode_ext)(
 	vk_device device, vk_swapchain_khr swapchain);
 typedef vk_result(VKAPI_PTR *pfn_vk_get_device_group_surface_present_modes2ext)(
-	vk_device device,
-	const vk_physical_device_surface_info2khr *p_surface_info,
+	vk_device device, const vk_physical_device_surface_info2khr *p_surface_info,
 	vk_device_group_present_mode_flags_khr *p_modes);
 
 #ifndef VK_NO_PROTOTYPES
 VKAPI_ATTR vk_result VKAPI_CALL vk_get_physical_device_surface_present_modes2ext(
 	vk_physical_device physical_device,
-	const vk_physical_device_surface_info2khr *p_surface_info,
-	uint32_t *p_present_mode_count,
-	vk_present_mode_khr *
-		p_present_modes) __asm("vkGetPhysicalDeviceSurfacePresentModes2EXT");
+	const vk_physical_device_surface_info2khr *p_surface_info, uint32_t *p_present_mode_count,
+	vk_present_mode_khr *p_present_modes) __asm("vkGetPhysicalDeviceSurfacePresentModes2EXT");
 
 VKAPI_ATTR vk_result VKAPI_CALL vk_acquire_full_screen_exclusive_mode_ext(
-	vk_device device,
-	vk_swapchain_khr swapchain) __asm("vkAcquireFullScreenExclusiveModeEXT");
+	vk_device device, vk_swapchain_khr swapchain) __asm("vkAcquireFullScreenExclusiveModeEXT");
 
 VKAPI_ATTR vk_result VKAPI_CALL vk_release_full_screen_exclusive_mode_ext(
-	vk_device device,
-	vk_swapchain_khr swapchain) __asm("vkReleaseFullScreenExclusiveModeEXT");
+	vk_device device, vk_swapchain_khr swapchain) __asm("vkReleaseFullScreenExclusiveModeEXT");
 
 VKAPI_ATTR vk_result VKAPI_CALL vk_get_device_group_surface_present_modes2ext(
-	vk_device device,
-	const vk_physical_device_surface_info2khr *p_surface_info,
+	vk_device device, const vk_physical_device_surface_info2khr *p_surface_info,
 	vk_device_group_present_mode_flags_khr
 		*p_modes) __asm("vkGetDeviceGroupSurfacePresentModes2EXT");
 #endif

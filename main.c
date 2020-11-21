@@ -1,7 +1,3 @@
-#define UNICODE
-#define VC_EXTRALEAN
-#define WIN32_LEAN_AND_MEAN
-#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -11,6 +7,10 @@
 
 #ifdef __linux__
 #include "linux_window.h"
+#elif _WIN32
+#include "win32_window.h"
+#else
+#error "UNSUPPORTED PLATFORM"
 #endif
 
 #include "vulkan.h"
@@ -24,7 +24,7 @@ static vk_instance create_instance()
 {
 	const char *instance_extensions[] = {
 		"VK_KHR_surface",
-		"VK_KHR_xcb_surface",
+		SURFACE_EXTENSION,
 		"VK_EXT_debug_report",
 		"VK_EXT_debug_utils",
 	};
@@ -77,20 +77,6 @@ static uint32_t select_queue_family(vk_physical_device physical_device)
 	printf("Selected queue family %u\n", queue_family_index);
 	return queue_family_index;
 }
-
-// static vk_surface_khr create_surface(vk_instance instance, HINSTANCE
-// hinstance, HWND hwnd)
-// {
-// 	vk_win32_surface_create_info_khr surface_info = {};
-// 	surface_info.s_type    =
-// VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR; 	surface_info.hinstance =
-// hinstance; 	surface_info.hwnd      = hwnd;
-//
-// 	vk_surface_khr surface;
-// 	vk_create_win32_surface_khr(instance, &surface_info, NULL, &surface);
-//
-// 	return surface;
-// }
 
 static vk_render_pass create_render_pass(vk_device device)
 {
@@ -192,10 +178,10 @@ static void main_loop(const struct window *window)
 		if (process_messages(window))
 			break;
 
-		uint64_t t1 = get_time_nano_secs();
-		uint64_t dt = t1 - t0;
+		uint64_t t1   = get_time_nano_secs();
+		uint64_t dt   = t1 - t0;
 		double dt_sec = dt / 1000000000.0;
-		printf("frame %d %f\n", dt_sec);
+		printf("frame %d %f\n", i, dt_sec);
 		t0 = t1;
 	}
 }

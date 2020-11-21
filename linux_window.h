@@ -7,6 +7,8 @@
 #include <xcb/xcb.h>
 #include "vulkan.h"
 
+#define SURFACE_EXTENSION "VK_KHR_xcb_surface"
+
 struct window {
 	xcb_connection_t *connection;
 	xcb_screen_t *screen;
