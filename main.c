@@ -171,6 +171,39 @@ static uint32_t find_memory_type(vk_physical_device physical_device,
 	return UINT32_MAX;
 }
 
+static vk_device create_device(vk_physical_device gpu, uint32_t queue_family)
+{
+	vk_physical_device_features features;
+	vk_get_physical_device_features(gpu, &features);
+
+	const char *extensions[]	       = { "VK_KHR_swapchain" };
+	float queue_priority		       = 0.0f;
+	vk_device_queue_create_info queue_info = {};
+	vk_device_create_info device_info      = {};
+	queue_info.s_type		       = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+	queue_info.queue_family_index	       = queue_family;
+	queue_info.queue_count		       = 1;
+	queue_info.p_queue_priorities	       = &queue_priority;
+	device_info.s_type		       = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+	device_info.queue_create_info_count    = 1;
+	device_info.p_queue_create_infos       = &queue_info;
+	device_info.enabled_extension_count    = ARRAY_SIZE(extensions);
+	device_info.pp_enabled_extension_names = extensions;
+	device_info.p_enabled_features	       = &features;
+
+	vk_device device;
+	vk_create_device(gpu, &device_info, NULL, &device);
+
+	return device;
+}
+
+static vk_queue get_device_queue(vk_device device, uint32_t queue_family)
+{
+	vk_queue queue;
+	vk_get_device_queue(device, queue_family, 0, &queue);
+	return queue;
+}
+
 static void main_loop(const struct window *window)
 {
 	uint64_t t0 = get_time_nano_secs();
@@ -181,7 +214,7 @@ static void main_loop(const struct window *window)
 		uint64_t t1   = get_time_nano_secs();
 		uint64_t dt   = t1 - t0;
 		double dt_sec = dt / 1000000000.0;
-		printf("frame %d %f\n", i, dt_sec);
+		// printf("frame %d %f\r", i, dt_sec);
 		t0 = t1;
 	}
 }
@@ -193,18 +226,21 @@ int main()
 	uint32_t width	= 480;
 	uint32_t height = 480;
 
-	vk_instance vk	       = create_instance();
-	vk_physical_device gpu = select_physical_device(vk);
-	uint32_t queue_family  = select_queue_family(gpu);
-
-	struct window window   = create_window(width, height);
-	vk_surface_khr surface = create_surface(&window, vk, gpu, queue_family);
+	struct window window	   = create_window(width, height);
+	vk_instance vk		   = create_instance();
+	vk_physical_device gpu	   = select_physical_device(vk);
+	uint32_t queue_family	   = select_queue_family(gpu);
+	vk_surface_khr surface	   = create_surface(&window, vk, gpu, queue_family);
+	vk_device device	   = create_device(gpu, queue_family);
+	vk_render_pass render_pass = create_render_pass(device);
 
 	main_loop(&window);
 
+	vk_destroy_render_pass(device, render_pass, NULL);
+	vk_destroy_device(device, NULL);
 	vk_destroy_surface_khr(vk, surface, NULL);
-	close_window(&window);
 	vk_destroy_instance(vk, NULL);
+	close_window(&window);
 
 	printf("Done\n");
 }
