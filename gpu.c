@@ -123,7 +123,7 @@ static VkDevice create_logical_device(VkPhysicalDevice physical_device, uint32_t
     return device;
 }
 
-static VkRenderPass create_render_pass(VkDevice device) {
+VkRenderPass gpu_create_render_pass(GPU* gpu) {
     VkAttachmentDescription color_attachment = {
         .flags            = 0,
         .format           = VK_FORMAT_B8G8R8A8_UNORM,
@@ -205,9 +205,9 @@ static VkRenderPass create_render_pass(VkDevice device) {
     };
 
     VkRenderPass render_pass;
-    vk_create_render_pass(device, &info, NULL, &render_pass);
+    vk_create_render_pass(gpu->device, &info, NULL, &render_pass);
 
-    // Device_set_debug_name(device, RENDER_PASS, render_pass, "render_pass");
+    gpu_set_debug_name(gpu, RENDER_PASS, render_pass, "[The] Render pass");
 
     return render_pass;
 }

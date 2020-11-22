@@ -30,10 +30,10 @@ typedef struct {
     MemoryHeap host_visible_heap;
 } GPU;
 
-GPU  gpu_create();
-void gpu_destroy(GPU* gpu);
-void gpu_set_debug_name_(const GPU* gpu, VkDebugReportObjectTypeEXT type, uint64_t object, const char* name);
-
-MemoryBlock gpu_allocate_memory(GPU* gpu, MemoryHeap* heap, const VkMemoryRequirements* requirements);
+GPU          gpu_create();
+void         gpu_destroy(GPU* gpu);
+void         gpu_set_debug_name_(const GPU* gpu, VkDebugReportObjectTypeEXT type, uint64_t object, const char* name);
+MemoryBlock  gpu_allocate_memory(GPU* gpu, MemoryHeap* heap, const VkMemoryRequirements* requirements);
+VkRenderPass gpu_create_render_pass(GPU* gpu);
 
 #endif
