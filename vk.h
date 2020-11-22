@@ -6,10 +6,10 @@
 #define SWAPCHAIN_MAX_IMAGE_COUNT 3
 
 typedef struct {
-    VkSwapchainKHR swapchain;
+    VkSwapchainKHR handle;
     VkImage        images[SWAPCHAIN_MAX_IMAGE_COUNT];
     VkImageView    views[SWAPCHAIN_MAX_IMAGE_COUNT];
-    uint8_t        image_count;
+    uint32_t       image_count;
 } Swapchain;
 
 typedef struct {

@@ -230,8 +230,47 @@ static Swapchain create_swapchain(VkDevice device, VkSurfaceKHR surface, uint32_
     };
 
     Swapchain swapchain = {};
-    vk_create_swapchain_khr(device, &info, NULL, &swapchain.swapchain);
-    set_object_name(device, SWAPCHAIN_KHR, swapchain.swapchain, "swapchain");
+    vk_create_swapchain_khr(device, &info, NULL, &swapchain.handle);
+    set_object_name(device, SWAPCHAIN_KHR, swapchain.handle, "swapchain");
+
+    vk_get_swapchain_images_khr(device, swapchain.handle, &swapchain.image_count, NULL);
+    assert(swapchain.image_count < SWAPCHAIN_MAX_IMAGE_COUNT);
+
+    vk_get_swapchain_images_khr(device, swapchain.handle, &swapchain.image_count, &swapchain.images[0]);
+    for (uint32_t i = 0; i < swapchain.image_count; i++) {
+        char name[32];
+        sprintf(name, "swapchain.images[%u]", i);
+        set_object_name(device, IMAGE, swapchain.images[i], name);
+    }
+
+    for (uint32_t i = 0; i < swapchain.image_count; i++) {
+        VkComponentMapping components = {
+            .r = VK_COMPONENT_SWIZZLE_R,
+            .g = VK_COMPONENT_SWIZZLE_G,
+            .b = VK_COMPONENT_SWIZZLE_B,
+            .a = VK_COMPONENT_SWIZZLE_A,
+        };
+        VkImageSubresourceRange subresource_range = {
+            .aspect_mask      = VK_IMAGE_ASPECT_COLOR_BIT,
+            .base_mip_level   = 0,
+            .level_count      = 1,
+            .base_array_layer = 0,
+            .layer_count      = 1,
+        };
+        VkImageViewCreateInfo view_info = {
+            .s_type            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .format            = VK_FORMAT_B8G8R8A8_UNORM,
+            .components        = components,
+            .subresource_range = subresource_range,
+            .view_type         = VK_IMAGE_VIEW_TYPE_2D,
+            .image             = swapchain.images[i],
+        };
+        vk_create_image_view(device, &view_info, NULL, &swapchain.views[i]);
+
+        char name[32];
+        sprintf(name, "swapchain.views[%u]", i);
+        set_object_name(device, IMAGE_VIEW, swapchain.views[i], name);
+    }
 
     return swapchain;
 }
@@ -268,7 +307,11 @@ VulkanContext vk_create_context(Window* window) {
 }
 
 static void destroy_swapchain(VkDevice device, Swapchain* swapchain) {
-    vk_destroy_swapchain_khr(device, swapchain->swapchain, NULL);
+    vk_destroy_swapchain_khr(device, swapchain->handle, NULL);
+
+    for (uint32_t i = 0; i < swapchain->image_count; i++) {
+        vk_destroy_image_view(device, swapchain->views[i], NULL);
+    }
 }
 
 void vk_destroy_context(VulkanContext* vk) {
