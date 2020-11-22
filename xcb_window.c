@@ -1,4 +1,4 @@
-#define VK_USE_PLATFORM_XCB_KHR
+#include <assert.h>
 #include <string.h>
 #include <xcb/xcb_event.h>
 #include "xcb_window.h"
@@ -8,7 +8,29 @@ static xcb_intern_atom_reply_t* intern_atom(xcb_connection_t* connection, int on
     return xcb_intern_atom_reply(connection, cookie, NULL);
 }
 
-Window Window_create(VkExtent2D extent) {
+static VkSurfaceKHR create_surface(const Device* device, xcb_connection_t* connection, xcb_window_t window) {
+    VkXcbSurfaceCreateInfoKHR info = {
+        .s_type     = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR,
+        .connection = connection,
+        .window     = window,
+    };
+
+    VkSurfaceKHR surface;
+    vk_create_xcb_surface_khr(device->instance, &info, NULL, &surface);
+
+    set_debug_name(device->handle, SURFACE_KHR, surface, "surface");
+
+    return surface;
+}
+
+static VkBool32 surface_supported(const Device* device, VkSurfaceKHR surface) {
+    VkBool32 surface_supported = VK_FALSE;
+    vk_get_physical_device_surface_support_khr(device->physical_device, device->queue_family, surface,
+                                               &surface_supported);
+    return surface_supported;
+}
+
+Window create_window(Device* device, uint32_t width, uint32_t height) {
     xcb_connection_t*     connection     = xcb_connect(NULL, NULL);
     const xcb_setup_t*    setup          = xcb_get_setup(connection);
     xcb_screen_iterator_t roots_iterator = xcb_setup_roots_iterator(setup);
@@ -16,7 +38,7 @@ Window Window_create(VkExtent2D extent) {
     uint32_t              value_mask     = XCB_CW_EVENT_MASK;
     uint32_t              value_list[]   = { XCB_EVENT_MASK_EXPOSURE };
     xcb_window_t          window         = xcb_generate_id(connection);
-    xcb_create_window(connection, XCB_COPY_FROM_PARENT, window, screen->root, 0, 0, extent.width, extent.height, 0,
+    xcb_create_window(connection, XCB_COPY_FROM_PARENT, window, screen->root, 0, 0, width, height, 0,
                       XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual, value_mask, value_list);
 
     xcb_intern_atom_reply_t* wm_protocols     = intern_atom(connection, 1, "WM_PROTOCOLS");
@@ -27,10 +49,15 @@ Window Window_create(VkExtent2D extent) {
     xcb_map_window(connection, window);
     xcb_flush(connection);
 
-    return (Window){ extent, connection, screen, window, wm_delete_window };
+    VkSurfaceKHR surface = create_surface(device, connection, window);
+    assert(surface_supported(device, surface));
+
+    set_debug_name(device->handle, SURFACE_KHR, surface, "surface");
+
+    return (Window){ width, height, connection, screen, window, wm_delete_window, surface };
 }
 
-int Window_poll_events(Window* window) {
+int poll_window_events(Window* window) {
     xcb_generic_event_t*        generic_event        = NULL;
     xcb_client_message_event_t* client_message_event = NULL;
     xcb_atom_t                  delete_window_atom   = window->wm_delete_window->atom;
@@ -48,20 +75,8 @@ int Window_poll_events(Window* window) {
     return 0;
 }
 
-void Window_destroy(Window* window) {
+void destroy_window(Device* device, Window* window) {
+    vk_destroy_surface_khr(device->instance, window->surface, NULL);
     xcb_destroy_window(window->connection, window->window);
     xcb_disconnect(window->connection);
-}
-
-VkSurfaceKHR Window_create_surface(Window* window, VkInstance instance) {
-    VkXcbSurfaceCreateInfoKHR info = {
-        .s_type     = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR,
-        .connection = window->connection,
-        .window     = window->window,
-    };
-
-    VkSurfaceKHR surface;
-    vk_create_xcb_surface_khr(instance, &info, NULL, &surface);
-
-    return surface;
 }
