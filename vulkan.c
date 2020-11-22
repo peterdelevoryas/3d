@@ -206,11 +206,19 @@ static VkRenderPass create_render_pass(VkDevice device) {
     return render_pass;
 }
 
-static VkSwapchainKHR create_swapchain(VkDevice device, VkSurfaceKHR surface, VkExtent2D extent) {
+static uint32_t get_min_image_count(VkPhysicalDevice physical_device, VkSurfaceKHR surface) {
+    VkSurfaceCapabilitiesKHR capabilities;
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device, surface, &capabilities);
+    return capabilities.minImageCount;
+}
+
+static Swapchain create_swapchain(VkDevice device, VkSurfaceKHR surface, uint32_t min_image_count, VkExtent2D extent) {
+    assert(min_image_count <= SWAPCHAIN_MAX_IMAGE_COUNT);
+
     VkSwapchainCreateInfoKHR info = {
         .sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
         .surface          = surface,
-        .minImageCount    = 2,
+        .minImageCount    = min_image_count,
         .imageFormat      = VK_FORMAT_B8G8R8A8_UNORM,
         .imageColorSpace  = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
         .imageExtent      = extent,
@@ -223,10 +231,9 @@ static VkSwapchainKHR create_swapchain(VkDevice device, VkSurfaceKHR surface, Vk
         .clipped          = VK_TRUE,
     };
 
-    VkSwapchainKHR swapchain;
-    vkCreateSwapchainKHR(device, &info, NULL, &swapchain);
-
-    set_object_name(device, SWAPCHAIN_KHR, swapchain, "swapchain");
+    Swapchain swapchain = {};
+    vkCreateSwapchainKHR(device, &info, NULL, &swapchain.swapchain);
+    set_object_name(device, SWAPCHAIN_KHR, swapchain.swapchain, "swapchain");
 
     return swapchain;
 }
@@ -252,17 +259,23 @@ VulkanContext create_vulkan_context(Window* window) {
     set_object_name(device, DEVICE, device, "device");
     set_object_name(device, SURFACE_KHR, surface, "surface");
 
-    VkRenderPass   render_pass = create_render_pass(device);
-    VkExtent2D     extent      = { window->width, window->height };
-    VkSwapchainKHR swapchain   = create_swapchain(device, surface, extent);
+    VkRenderPass render_pass     = create_render_pass(device);
+    VkExtent2D   extent          = { window->width, window->height };
+    uint32_t     min_image_count = get_min_image_count(physical_device, surface);
+    Swapchain    swapchain       = create_swapchain(device, surface, min_image_count, extent);
 
     return (VulkanContext){
         instance, surface, physical_device, queue_family, device, render_pass, swapchain,
     };
 }
 
+void destroy_swapchain(VkDevice device, Swapchain* swapchain) {
+    vkDestroySwapchainKHR(device, swapchain->swapchain, NULL);
+}
+
 void destroy_vulkan_context(VulkanContext* vk) {
-    vkDestroySwapchainKHR(vk->device, vk->swapchain, NULL);
+    destroy_swapchain(vk->device, &vk->swapchain);
+
     vkDestroyRenderPass(vk->device, vk->render_pass, NULL);
     vkDestroyDevice(vk->device, NULL);
     vkDestroySurfaceKHR(vk->instance, vk->surface, NULL);

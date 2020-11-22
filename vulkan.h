@@ -3,6 +3,15 @@
 #include <vulkan/vulkan.h>
 #include "window.h"
 
+#define SWAPCHAIN_MAX_IMAGE_COUNT 3
+
+typedef struct {
+    VkSwapchainKHR swapchain;
+    VkImage        images[SWAPCHAIN_MAX_IMAGE_COUNT];
+    VkImageView    views[SWAPCHAIN_MAX_IMAGE_COUNT];
+    uint8_t        image_count;
+} Swapchain;
+
 typedef struct {
     VkInstance       instance;
     VkSurfaceKHR     surface;
@@ -10,7 +19,7 @@ typedef struct {
     uint32_t         queue_family;
     VkDevice         device;
     VkRenderPass     render_pass;
-    VkSwapchainKHR   swapchain;
+    Swapchain        swapchain;
 } VulkanContext;
 
 VulkanContext create_vulkan_context(Window* window);
