@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 #include "gpu.h"
 
@@ -9,6 +10,7 @@
 #error "Unsupported platform"
 #endif
 
+#define MiB 1048576
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
 static VkInstance create_instance() {
@@ -77,7 +79,7 @@ static void init_fn_ptrs(VkDevice device) {
     pfn.vk_debug_marker_set_object_name_ext = (void*) vk_get_device_proc_addr(device, "vkDebugMarkerSetObjectNameEXT");
 }
 
-void set_debug_name_(const GPU* gpu, VkDebugReportObjectTypeEXT type, uint64_t object, const char* name) {
+void gpu_set_debug_name_(const GPU* gpu, VkDebugReportObjectTypeEXT type, uint64_t object, const char* name) {
     VkDebugMarkerObjectNameInfoEXT object_name = {
         .s_type        = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT,
         .object_type   = type,
@@ -114,6 +116,9 @@ static VkDevice create_logical_device(VkPhysicalDevice physical_device, uint32_t
 
     VkDevice device;
     vk_create_device(physical_device, &info, NULL, &device);
+
+    assert(device);
+    init_fn_ptrs(device);
 
     return device;
 }
@@ -207,51 +212,128 @@ static VkRenderPass create_render_pass(VkDevice device) {
     return render_pass;
 }
 
-static VkImage create_depth_image(VkDevice device, VkExtent2D extent) {
-    VkImageCreateInfo info = {
-        .s_type         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .image_type     = VK_IMAGE_TYPE_2D,
-        .format         = VK_FORMAT_D16_UNORM,
-        .extent         = (VkExtent3D){ extent.width, extent.height, 1 },
-        .mip_levels     = 1,
-        .array_layers   = 1,
-        .samples        = VK_SAMPLE_COUNT_1_BIT,
-        .tiling         = VK_IMAGE_TILING_OPTIMAL,
-        .usage          = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        .initial_layout = VK_IMAGE_LAYOUT_UNDEFINED,
-    };
+static uint32_t find_memory_type(VkPhysicalDevice physical_device, VkMemoryPropertyFlags desired) {
+    VkPhysicalDeviceMemoryProperties properties = {};
+    vk_get_physical_device_memory_properties(physical_device, &properties);
 
-    VkImage image;
-    vk_create_image(device, &info, NULL, &image);
+    for (uint32_t i = 0; i < properties.memory_type_count; i++) {
+        VkMemoryPropertyFlags flags = properties.memory_types[i].property_flags;
+        if ((flags & desired) == desired) {
+            return i;
+        }
+    }
 
-    // set_object_name(device, IMAGE, image, "depth_image");
-
-    return image;
+    return UINT32_MAX;
 }
 
-GPU create_gpu() {
+GPU gpu_create() {
     VkInstance       instance        = create_instance();
     VkPhysicalDevice physical_device = select_physical_device(instance);
     uint32_t         queue_family    = select_queue_family(physical_device);
     VkDevice         device          = create_logical_device(physical_device, queue_family);
 
-    init_fn_ptrs(device);
-
-    GPU gpu = {
-        instance,
-        physical_device,
-        queue_family,
-        device,
+    uint32_t device_local_memory = find_memory_type(physical_device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    uint32_t host_visible_memory =
+        find_memory_type(physical_device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    MemoryHeap device_local_heap = {
+        .name        = "Device local",
+        .memory_type = device_local_memory,
+    };
+    MemoryHeap host_visible_heap = {
+        .name        = "Host visible",
+        .memory_type = host_visible_memory,
     };
 
-    set_debug_name(&gpu, INSTANCE, gpu.instance, "instance");
-    set_debug_name(&gpu, PHYSICAL_DEVICE, gpu.physical_device, "physical_device");
-    set_debug_name(&gpu, DEVICE, gpu.device, "device");
+    GPU gpu = {
+        instance, physical_device, queue_family, device, device_local_heap, host_visible_heap,
+    };
+
+    gpu_set_debug_name(&gpu, INSTANCE, gpu.instance, "Instance");
+    gpu_set_debug_name(&gpu, PHYSICAL_DEVICE, gpu.physical_device, "Physical device");
+    gpu_set_debug_name(&gpu, DEVICE, gpu.device, "Logical device");
 
     return gpu;
 }
 
-void destroy_gpu(GPU* gpu) {
+static void gpu_destroy_memory_heap(GPU* gpu, MemoryHeap* heap) {
+    for (uint32_t i = 0; i < heap->block_count; i++) {
+        vk_free_memory(gpu->device, heap->blocks[i].memory, NULL);
+    }
+}
+
+void gpu_destroy(GPU* gpu) {
+    gpu_destroy_memory_heap(gpu, &gpu->device_local_heap);
+    gpu_destroy_memory_heap(gpu, &gpu->host_visible_heap);
+
     vk_destroy_device(gpu->device, NULL);
     vk_destroy_instance(gpu->instance, NULL);
+}
+
+static MemoryBlock split_block(MemoryBlock* block, VkDeviceSize offset) {
+    assert(block->length >= offset);
+
+    MemoryBlock left = {
+        .memory = block->memory,
+        .offset = block->offset,
+        .length = offset,
+    };
+
+    block->offset += offset;
+    block->length -= offset;
+
+    return left;
+}
+
+static VkDeviceSize round_up(VkDeviceSize size, VkDeviceSize align) {
+    assert((align & (align - 1)) == 0);
+    return (size + align - 1) & ~(align - 1);
+}
+
+MemoryBlock gpu_allocate_memory(GPU* gpu, MemoryHeap* heap, const VkMemoryRequirements* requirements) {
+    assert((requirements->memory_type_bits >> heap->memory_type) & 1);
+
+    for (uint32_t i = 0; i < heap->block_count; i++) {
+        MemoryBlock* block          = &heap->blocks[i];
+        VkDeviceSize aligned_offset = round_up(block->offset, requirements->alignment);
+        assert(aligned_offset % requirements->alignment == 0);
+        VkDeviceSize padding      = aligned_offset - block->offset;
+        VkDeviceSize aligned_size = requirements->size + padding;
+        if (block->length < aligned_size) {
+            continue;
+        }
+        assert(aligned_size <= block->length);
+
+        MemoryBlock left = split_block(block, aligned_size);
+        left.offset      = aligned_offset;
+
+        // Note: the right side of the block, which remains in the heap, may have zero bytes free
+        // now. Regardless, we leave it in the heap. Fine-grained deallocation is not supported
+        // here, but we still need a reference to each block that we allocated when we destroy the
+        // heap. That's why we keep around zero-length memory blocks.
+
+        return left;
+    }
+
+    VkMemoryAllocateInfo info = {
+        .s_type            = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .allocation_size   = 256 * MiB,
+        .memory_type_index = heap->memory_type,
+    };
+    VkDeviceMemory memory;
+    vk_allocate_memory(gpu->device, &info, NULL, &memory);
+
+    MemoryBlock block = {
+        .memory = memory,
+        .offset = 0,
+        .length = info.allocation_size,
+    };
+    heap->blocks[heap->block_count++] = block;
+
+    static uint32_t i = 0;
+    char            name[32];
+    sprintf(name, "%s memory heap, block %u\n", heap->name, i);
+    gpu_set_debug_name(gpu, DEVICE_MEMORY, memory, name);
+    i++;
+
+    return gpu_allocate_memory(gpu, heap, requirements);
 }

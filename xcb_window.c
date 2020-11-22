@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <string.h>
 #include <xcb/xcb_event.h>
-#include "xcb_window.h"
+#include "window.h"
 
 static xcb_intern_atom_reply_t* intern_atom(xcb_connection_t* connection, int only_if_exists, const char* name) {
     xcb_intern_atom_cookie_t cookie = xcb_intern_atom(connection, only_if_exists, strlen(name), name);

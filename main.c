@@ -3,7 +3,7 @@
 #include "swapchain.h"
 
 int main() {
-    GPU       gpu       = create_gpu();
+    GPU       gpu       = gpu_create();
     Window    window    = create_window(&gpu, 480, 480);
     Swapchain swapchain = create_swapchain(&gpu, &window);
 
@@ -16,5 +16,5 @@ int main() {
 
     destroy_swapchain(&gpu, &swapchain);
     destroy_window(&gpu, &window);
-    destroy_gpu(&gpu);
+    gpu_destroy(&gpu);
 }
