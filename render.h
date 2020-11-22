@@ -20,6 +20,7 @@ typedef struct {
     VkDevice         device;
     VkRenderPass     render_pass;
     Swapchain        swapchain;
+    VkImage          depth_image;
 } Renderer;
 
 Renderer Renderer_create(Window* window);

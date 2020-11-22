@@ -281,6 +281,28 @@ static VkBool32 surface_is_supported(VkSurfaceKHR surface, VkPhysicalDevice phys
     return surface_supported;
 }
 
+static VkImage create_depth_image(VkDevice device, VkExtent2D extent) {
+    VkImageCreateInfo info = {
+        .s_type         = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .image_type     = VK_IMAGE_TYPE_2D,
+        .format         = VK_FORMAT_D16_UNORM,
+        .extent         = (VkExtent3D){ extent.width, extent.height, 1 },
+        .mip_levels     = 1,
+        .array_layers   = 1,
+        .samples        = VK_SAMPLE_COUNT_1_BIT,
+        .tiling         = VK_IMAGE_TILING_OPTIMAL,
+        .usage          = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        .initial_layout = VK_IMAGE_LAYOUT_UNDEFINED,
+    };
+
+    VkImage image;
+    vk_create_image(device, &info, NULL, &image);
+
+    set_object_name(device, IMAGE, image, "depth_image");
+
+    return image;
+}
+
 Renderer Renderer_create(Window* window) {
     VkInstance   instance = create_instance();
     VkSurfaceKHR surface  = Window_create_surface(window, instance);
@@ -299,9 +321,10 @@ Renderer Renderer_create(Window* window) {
     VkRenderPass render_pass     = create_render_pass(device);
     uint32_t     min_image_count = get_min_image_count(physical_device, surface);
     Swapchain    swapchain       = create_swapchain(device, surface, min_image_count, window->extent);
+    VkImage      depth_image     = create_depth_image(device, window->extent);
 
     return (Renderer){
-        instance, surface, physical_device, queue_family, device, render_pass, swapchain,
+        instance, surface, physical_device, queue_family, device, render_pass, swapchain, depth_image,
     };
 }
 
@@ -314,6 +337,8 @@ static void destroy_swapchain(VkDevice device, Swapchain* swapchain) {
 }
 
 void Renderer_destroy(Renderer* r) {
+    vk_destroy_image(r->device, r->depth_image, NULL);
+
     destroy_swapchain(r->device, &r->swapchain);
 
     vk_destroy_render_pass(r->device, r->render_pass, NULL);
