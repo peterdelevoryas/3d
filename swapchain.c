@@ -32,7 +32,7 @@ Swapchain create_swapchain(const Device* device, const Window* window) {
 
     Swapchain swapchain = {};
     vk_create_swapchain_khr(device->handle, &info, NULL, &swapchain.handle);
-    set_debug_name(device->handle, SWAPCHAIN_KHR, swapchain.handle, "swapchain");
+    set_debug_name(device, SWAPCHAIN_KHR, swapchain.handle, "swapchain");
 
     vk_get_swapchain_images_khr(device->handle, swapchain.handle, &swapchain.image_count, NULL);
     assert(swapchain.image_count < SWAPCHAIN_MAX_IMAGE_COUNT);
@@ -41,7 +41,7 @@ Swapchain create_swapchain(const Device* device, const Window* window) {
     for (uint32_t i = 0; i < swapchain.image_count; i++) {
         char name[32];
         sprintf(name, "swapchain.images[%u]", i);
-        set_debug_name(device->handle, IMAGE, swapchain.images[i], name);
+        set_debug_name(device, IMAGE, swapchain.images[i], name);
     }
 
     for (uint32_t i = 0; i < swapchain.image_count; i++) {
@@ -70,7 +70,7 @@ Swapchain create_swapchain(const Device* device, const Window* window) {
 
         char name[32];
         sprintf(name, "swapchain.views[%u]", i);
-        set_debug_name(device->handle, IMAGE_VIEW, swapchain.views[i], name);
+        set_debug_name(device, IMAGE_VIEW, swapchain.views[i], name);
     }
 
     return swapchain;

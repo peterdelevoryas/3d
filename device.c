@@ -77,14 +77,14 @@ static void init_fn_ptrs(VkDevice device) {
     pfn.vk_debug_marker_set_object_name_ext = (void*) vk_get_device_proc_addr(device, "vkDebugMarkerSetObjectNameEXT");
 }
 
-void set_debug_name_(VkDevice device, VkDebugReportObjectTypeEXT type, uint64_t object, const char* name) {
+void set_debug_name_(const Device* device, VkDebugReportObjectTypeEXT type, uint64_t object, const char* name) {
     VkDebugMarkerObjectNameInfoEXT object_name = {
         .s_type        = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT,
         .object_type   = type,
         .object        = object,
         .p_object_name = name,
     };
-    pfn.vk_debug_marker_set_object_name_ext(device, &object_name);
+    pfn.vk_debug_marker_set_object_name_ext(device->handle, &object_name);
 }
 
 static VkDevice create_logical_device(VkPhysicalDevice physical_device, uint32_t queue_family) {

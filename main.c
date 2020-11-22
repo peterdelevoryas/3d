@@ -4,9 +4,9 @@
 
 int main() {
     Device device = create_device();
-    set_debug_name(device.handle, INSTANCE, device.instance, "instance");
-    set_debug_name(device.handle, PHYSICAL_DEVICE, device.physical_device, "physical_device");
-    set_debug_name(device.handle, DEVICE, device.handle, "device");
+    set_debug_name(&device, INSTANCE, device.instance, "instance");
+    set_debug_name(&device, PHYSICAL_DEVICE, device.physical_device, "physical_device");
+    set_debug_name(&device, DEVICE, device.handle, "device");
 
     Window    window    = create_window(&device, 480, 480);
     Swapchain swapchain = create_swapchain(&device, &window);

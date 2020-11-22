@@ -18,7 +18,7 @@ static VkSurfaceKHR create_surface(const Device* device, xcb_connection_t* conne
     VkSurfaceKHR surface;
     vk_create_xcb_surface_khr(device->instance, &info, NULL, &surface);
 
-    set_debug_name(device->handle, SURFACE_KHR, surface, "surface");
+    set_debug_name(device, SURFACE_KHR, surface, "surface");
 
     return surface;
 }
@@ -52,7 +52,7 @@ Window create_window(Device* device, uint32_t width, uint32_t height) {
     VkSurfaceKHR surface = create_surface(device, connection, window);
     assert(surface_supported(device, surface));
 
-    set_debug_name(device->handle, SURFACE_KHR, surface, "surface");
+    set_debug_name(device, SURFACE_KHR, surface, "surface");
 
     return (Window){ width, height, connection, screen, window, wm_delete_window, surface };
 }

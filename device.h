@@ -14,6 +14,6 @@ typedef struct {
 
 Device create_device();
 void   destroy_device(Device* device);
-void   set_debug_name_(VkDevice device, VkDebugReportObjectTypeEXT type, uint64_t object, const char* name);
+void   set_debug_name_(const Device* device, VkDebugReportObjectTypeEXT type, uint64_t object, const char* name);
 
 #endif
