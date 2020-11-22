@@ -2,6 +2,8 @@
 #include "gpu.h"
 #include "swapchain.h"
 
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+
 typedef struct {
     float xx, xy, xz, xw;
     float yx, yy, yz, yw;
@@ -52,6 +54,21 @@ int main() {
     VkPipelineLayout pipeline_layout = gpu_create_pipeline_layout(&gpu);
     VkShaderModule   basic_vert      = gpu_create_shader(&gpu, BASIC_VERT, sizeof(BASIC_VERT));
     VkShaderModule   basic_frag      = gpu_create_shader(&gpu, BASIC_FRAG, sizeof(BASIC_FRAG));
+
+    VkFramebuffer framebuffers[SWAPCHAIN_MAX_IMAGE_COUNT] = {};
+    for (uint32_t i = 0; i < swapchain.image_count; i++) {
+        VkImageView             attachments[2] = { swapchain.views[i], swapchain.depth_attachment.view };
+        VkFramebufferCreateInfo info           = {
+            .s_type           = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+            .render_pass      = render_pass,
+            .attachment_count = ARRAY_SIZE(attachments),
+            .p_attachments    = attachments,
+            .width            = window.width,
+            .height           = window.height,
+            .layers           = 1,
+        };
+        vk_create_framebuffer(gpu.device, &info, NULL, &framebuffers[i]);
+    }
 
     for (;;) {
         int quit = poll_events(&window);
