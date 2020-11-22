@@ -233,16 +233,22 @@ Device create_device() {
     VkInstance       instance        = create_instance();
     VkPhysicalDevice physical_device = select_physical_device(instance);
     uint32_t         queue_family    = select_queue_family(physical_device);
-    VkDevice         device          = create_logical_device(physical_device, queue_family);
+    VkDevice         handle          = create_logical_device(physical_device, queue_family);
 
-    init_fn_ptrs(device);
+    init_fn_ptrs(handle);
 
-    return (Device){
+    Device device = {
         instance,
         physical_device,
         queue_family,
-        device,
+        handle,
     };
+
+    set_debug_name(&device, INSTANCE, device.instance, "instance");
+    set_debug_name(&device, PHYSICAL_DEVICE, device.physical_device, "physical_device");
+    set_debug_name(&device, DEVICE, device.handle, "device");
+
+    return device;
 }
 
 void destroy_device(Device* device) {
