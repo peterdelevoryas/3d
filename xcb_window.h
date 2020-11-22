@@ -1,6 +1,9 @@
 #ifndef xcb_window_h
 #define xcb_window_h
 #include <xcb/xcb.h>
+#include <vulkan/vulkan.h>
+
+#define WINDOW_SURFACE_EXTENSION "VK_KHR_xcb_surface"
 
 typedef struct {
     xcb_connection_t*        connection;
@@ -12,5 +15,7 @@ typedef struct {
 Window create_window(uint32_t width, uint32_t height);
 int    process_window_messages(Window* window);
 void   destroy_window(Window* window);
+
+VkSurfaceKHR create_surface(Window* window, VkInstance instance);
 
 #endif

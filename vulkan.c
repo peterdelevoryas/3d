@@ -1,8 +1,3 @@
-#ifdef __linux__
-#define SURFACE_EXTENSION "VK_KHR_xcb_surface"
-#define VK_USE_PLATFORM_XCB_KHR
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -14,10 +9,10 @@ static VkInstance create_instance() {
     putenv("VK_INSTANCE_LAYERS=VK_LAYER_KHRONOS_validation");
 
     const char* extensions[] = {
-        "VK_KHR_surface",
-        SURFACE_EXTENSION,
         "VK_EXT_debug_report",
         "VK_EXT_debug_utils",
+        "VK_KHR_surface",
+        WINDOW_SURFACE_EXTENSION,
     };
     VkInstanceCreateInfo info = {
         .sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
@@ -68,15 +63,52 @@ static uint32_t select_queue_family(VkPhysicalDevice physical_device) {
     return queue_family;
 }
 
-VulkanContext create_vulkan_context() {
-    VulkanContext vk   = {};
-    vk.instance        = create_instance();
-    vk.physical_device = select_physical_device(vk.instance);
-    vk.queue_family    = select_queue_family(vk.physical_device);
+static VkDevice create_logical_device(VkPhysicalDevice physical_device, uint32_t queue_family) {
+    VkPhysicalDeviceFeatures features;
+    vkGetPhysicalDeviceFeatures(physical_device, &features);
 
-    return vk;
+    const char* extensions[] = { "VK_KHR_swapchain" };
+    float queue_priority = 0.0f;
+    VkDeviceQueueCreateInfo queue_info = {
+        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+        .queueFamilyIndex = queue_family,
+        .queueCount = 1,
+        .pQueuePriorities = &queue_priority,
+    };
+
+    VkDeviceCreateInfo info = {
+        .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+        .queueCreateInfoCount = 1,
+        .pQueueCreateInfos = &queue_info,
+        .enabledExtensionCount = ARRAY_SIZE(extensions),
+        .ppEnabledExtensionNames = extensions,
+        .pEnabledFeatures = &features,
+    };
+
+    VkDevice device;
+    vkCreateDevice(physical_device, &info, NULL, &device);
+
+    return device;
+}
+
+VulkanContext create_vulkan_context(Window* window) {
+    VkInstance       instance        = create_instance();
+    VkSurfaceKHR     surface         = create_surface(window, instance);
+    VkPhysicalDevice physical_device = select_physical_device(instance);
+    uint32_t         queue_family    = select_queue_family(physical_device);
+    VkDevice         device          = create_logical_device(physical_device, queue_family);
+
+    return (VulkanContext){
+        instance,
+        surface,
+        physical_device,
+        queue_family,
+        device,
+    };
 }
 
 void destroy_vulkan_context(VulkanContext* vk) {
+    vkDestroyDevice(vk->device, NULL);
+    vkDestroySurfaceKHR(vk->instance, vk->surface, NULL);
     vkDestroyInstance(vk->instance, NULL);
 }

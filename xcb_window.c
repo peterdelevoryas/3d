@@ -1,3 +1,6 @@
+#define VK_USE_PLATFORM_XCB_KHR
+#include <vulkan/vulkan.h>
+
 #include <string.h>
 #include <xcb/xcb_event.h>
 #include "xcb_window.h"
@@ -50,4 +53,17 @@ int process_window_messages(Window* window) {
 void destroy_window(Window* window) {
     xcb_destroy_window(window->connection, window->window);
     xcb_disconnect(window->connection);
+}
+
+VkSurfaceKHR create_surface(Window* window, VkInstance instance) {
+    VkXcbSurfaceCreateInfoKHR info = {
+        .sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR,
+        .connection = window->connection,
+        .window = window->window,
+    };
+
+    VkSurfaceKHR surface;
+    vkCreateXcbSurfaceKHR(instance, &info, NULL, &surface);
+
+    return surface;
 }
