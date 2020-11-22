@@ -13,7 +13,6 @@ typedef struct {
 } Attachment;
 
 typedef struct {
-    VkSurfaceKHR   surface;
     VkSwapchainKHR handle;
     VkImage        images[SWAPCHAIN_MAX_IMAGE_COUNT];
     VkImageView    views[SWAPCHAIN_MAX_IMAGE_COUNT];
