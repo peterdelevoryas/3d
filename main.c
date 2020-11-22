@@ -29,6 +29,20 @@ VkPipelineLayout gpu_create_pipeline_layout(GPU* gpu) {
     return pipeline_layout;
 }
 
+VkShaderModule gpu_create_shader(GPU* gpu, const uint32_t* code, VkDeviceSize size) {
+    VkShaderModuleCreateInfo info = {
+        .s_type    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+        .code_size = size,
+        .p_code    = code,
+    };
+    VkShaderModule shader;
+    vk_create_shader_module(gpu->device, &info, NULL, &shader);
+    return shader;
+}
+
+#include "basic.vert.in"
+#include "basic.frag.in"
+
 int main() {
     GPU       gpu       = gpu_create();
     Window    window    = create_window(&gpu, 480, 480);
@@ -36,6 +50,8 @@ int main() {
 
     VkRenderPass     render_pass     = gpu_create_render_pass(&gpu);
     VkPipelineLayout pipeline_layout = gpu_create_pipeline_layout(&gpu);
+    VkShaderModule   basic_vert      = gpu_create_shader(&gpu, BASIC_VERT, sizeof(BASIC_VERT));
+    VkShaderModule   basic_frag      = gpu_create_shader(&gpu, BASIC_FRAG, sizeof(BASIC_FRAG));
 
     for (;;) {
         int quit = poll_events(&window);
@@ -44,6 +60,8 @@ int main() {
         }
     }
 
+    vk_destroy_shader_module(gpu.device, basic_vert, NULL);
+    vk_destroy_shader_module(gpu.device, basic_frag, NULL);
     vk_destroy_render_pass(gpu.device, render_pass, NULL);
     vk_destroy_pipeline_layout(gpu.device, pipeline_layout, NULL);
 
