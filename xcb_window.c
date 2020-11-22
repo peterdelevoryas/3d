@@ -29,7 +29,7 @@ Window create_window(uint32_t width, uint32_t height) {
     xcb_map_window(connection, window);
     xcb_flush(connection);
 
-    return (Window){ connection, screen, window, wm_delete_window };
+    return (Window){ width, height, connection, screen, window, wm_delete_window };
 }
 
 int process_window_messages(Window* window) {

@@ -10,6 +10,7 @@ typedef struct {
     uint32_t         queue_family;
     VkDevice         device;
     VkRenderPass     render_pass;
+    VkSwapchainKHR   swapchain;
 } VulkanContext;
 
 VulkanContext create_vulkan_context(Window* window);

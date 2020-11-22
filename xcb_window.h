@@ -6,6 +6,8 @@
 #define WINDOW_SURFACE_EXTENSION "VK_KHR_xcb_surface"
 
 typedef struct {
+    uint32_t width;
+    uint32_t height;
     xcb_connection_t*        connection;
     xcb_screen_t*            screen;
     xcb_window_t             window;

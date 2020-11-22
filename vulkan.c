@@ -200,29 +200,65 @@ static VkRenderPass create_render_pass(VkDevice device) {
 
     VkRenderPass render_pass;
     vkCreateRenderPass(device, &info, NULL, &render_pass);
+
     set_object_name(device, RENDER_PASS, render_pass, "render_pass");
 
     return render_pass;
 }
 
+static VkSwapchainKHR create_swapchain(VkDevice device, VkSurfaceKHR surface, VkExtent2D extent) {
+    VkSwapchainCreateInfoKHR info = {
+        .sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+        .surface          = surface,
+        .minImageCount    = 2,
+        .imageFormat      = VK_FORMAT_B8G8R8A8_UNORM,
+        .imageColorSpace  = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
+        .imageExtent      = extent,
+        .imageArrayLayers = 1,
+        .imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+        .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+        .preTransform     = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+        .compositeAlpha   = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+        .presentMode      = VK_PRESENT_MODE_FIFO_KHR,
+        .clipped          = VK_TRUE,
+    };
+
+    VkSwapchainKHR swapchain;
+    vkCreateSwapchainKHR(device, &info, NULL, &swapchain);
+
+    set_object_name(device, SWAPCHAIN_KHR, swapchain, "swapchain");
+
+    return swapchain;
+}
+
 VulkanContext create_vulkan_context(Window* window) {
     VkInstance       instance        = create_instance();
     VkSurfaceKHR     surface         = create_surface(window, instance);
+
     VkPhysicalDevice physical_device = select_physical_device(instance);
     uint32_t         queue_family    = select_queue_family(physical_device);
-    VkDevice         device          = create_logical_device(physical_device, queue_family);
+
+    VkBool32 surface_supported = VK_FALSE;
+    vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, queue_family, surface, &surface_supported);
+    assert(surface_supported);
+
+    VkDevice device = create_logical_device(physical_device, queue_family);
 
     initialize_extension_function_pointers(device);
     set_object_name(device, DEVICE, device, "device");
+    set_object_name(device, SURFACE_KHR, surface, "surface");
 
-    VkRenderPass render_pass = create_render_pass(device);
+    VkRenderPass   render_pass = create_render_pass(device);
+    VkExtent2D     extent      = { window->width, window->height };
+    VkSwapchainKHR swapchain   = create_swapchain(device, surface, extent);
 
     return (VulkanContext){
-        instance, surface, physical_device, queue_family, device, render_pass,
+        instance, surface, physical_device, queue_family, device, render_pass, swapchain,
     };
 }
 
 void destroy_vulkan_context(VulkanContext* vk) {
+    vkDestroySwapchainKHR(vk->device, vk->swapchain, NULL);
     vkDestroyRenderPass(vk->device, vk->render_pass, NULL);
     vkDestroyDevice(vk->device, NULL);
     vkDestroySurfaceKHR(vk->instance, vk->surface, NULL);
