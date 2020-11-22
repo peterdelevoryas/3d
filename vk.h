@@ -22,7 +22,7 @@ typedef struct {
     Swapchain        swapchain;
 } VulkanContext;
 
-VulkanContext create_vulkan_context(Window* window);
-void          destroy_vulkan_context(VulkanContext* vk);
+VulkanContext vk_create_context(Window* window);
+void          vk_destroy_context(VulkanContext* vk);
 
 #endif

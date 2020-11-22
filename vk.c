@@ -242,7 +242,7 @@ static VkBool32 surface_is_supported(VkSurfaceKHR surface, VkPhysicalDevice phys
     return surface_supported;
 }
 
-VulkanContext create_vulkan_context(Window* window) {
+VulkanContext vk_create_context(Window* window) {
     VkInstance   instance = create_instance();
     VkSurfaceKHR surface  = create_surface(window, instance);
 
@@ -267,11 +267,11 @@ VulkanContext create_vulkan_context(Window* window) {
     };
 }
 
-void destroy_swapchain(VkDevice device, Swapchain* swapchain) {
+static void destroy_swapchain(VkDevice device, Swapchain* swapchain) {
     vk_destroy_swapchain_khr(device, swapchain->swapchain, NULL);
 }
 
-void destroy_vulkan_context(VulkanContext* vk) {
+void vk_destroy_context(VulkanContext* vk) {
     destroy_swapchain(vk->device, &vk->swapchain);
 
     vk_destroy_render_pass(vk->device, vk->render_pass, NULL);
