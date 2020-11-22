@@ -1,28 +1,78 @@
-#ifndef vulkan_h
-#define vulkan_h
-#include <vulkan/vulkan.h>
-#include "window.h"
+#ifndef VULKAN_H_
+#define VULKAN_H_ 1
 
-#define SWAPCHAIN_MAX_IMAGE_COUNT 3
+/*
+** copyright (c) 2015-2020 the khronos group inc.
+**
+** SPDX-license-identifier: apache-2.0
+*/
 
-typedef struct {
-    VkSwapchainKHR swapchain;
-    VkImage        images[SWAPCHAIN_MAX_IMAGE_COUNT];
-    VkImageView    views[SWAPCHAIN_MAX_IMAGE_COUNT];
-    uint8_t        image_count;
-} Swapchain;
+#include "vk_platform.h"
+#include "vulkan_core.h"
 
-typedef struct {
-    VkInstance       instance;
-    VkSurfaceKHR     surface;
-    VkPhysicalDevice physical_device;
-    uint32_t         queue_family;
-    VkDevice         device;
-    VkRenderPass     render_pass;
-    Swapchain        swapchain;
-} VulkanContext;
-
-VulkanContext create_vulkan_context(Window* window);
-void          destroy_vulkan_context(VulkanContext* vk);
-
+#ifdef VK_USE_PLATFORM_ANDROID_KHR
+#include "vulkan_android.h"
 #endif
+
+#ifdef VK_USE_PLATFORM_FUCHSIA
+#include <zircon/types.h>
+#include "vulkan_fuchsia.h"
+#endif
+
+#ifdef VK_USE_PLATFORM_IOS_MVK
+#include "vulkan_ios.h"
+#endif
+
+#ifdef VK_USE_PLATFORM_MACOS_MVK
+#include "vulkan_macos.h"
+#endif
+
+#ifdef VK_USE_PLATFORM_METAL_EXT
+#include "vulkan_metal.h"
+#endif
+
+#ifdef VK_USE_PLATFORM_VI_NN
+#include "vulkan_vi.h"
+#endif
+
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+#include <wayland-client.h>
+#include "vulkan_wayland.h"
+#endif
+
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+#include <windows.h>
+#include "vulkan_win32.h"
+#endif
+
+#ifdef VK_USE_PLATFORM_XCB_KHR
+#include <xcb/xcb.h>
+#include "vulkan_xcb.h"
+#endif
+
+#ifdef VK_USE_PLATFORM_XLIB_KHR
+#include <X11/xlib.h>
+#include "vulkan_xlib.h"
+#endif
+
+#ifdef VK_USE_PLATFORM_DIRECTFB_EXT
+#include <directfb.h>
+#include "vulkan_directfb.h"
+#endif
+
+#ifdef VK_USE_PLATFORM_XLIB_XRANDR_EXT
+#include <X11/xlib.h>
+#include <X11/extensions/xrandr.h>
+#include "vulkan_xlib_xrandr.h"
+#endif
+
+#ifdef VK_USE_PLATFORM_GGP
+#include <ggp_c/vulkan_types.h>
+#include "vulkan_ggp.h"
+#endif
+
+#ifdef VK_ENABLE_BETA_EXTENSIONS
+#include "vulkan_beta.h"
+#endif
+
+#endif // VULKAN_H_

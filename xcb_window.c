@@ -1,6 +1,4 @@
 #define VK_USE_PLATFORM_XCB_KHR
-#include <vulkan/vulkan.h>
-
 #include <string.h>
 #include <xcb/xcb_event.h>
 #include "xcb_window.h"
@@ -57,13 +55,13 @@ void destroy_window(Window* window) {
 
 VkSurfaceKHR create_surface(Window* window, VkInstance instance) {
     VkXcbSurfaceCreateInfoKHR info = {
-        .sType      = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR,
+        .s_type     = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR,
         .connection = window->connection,
         .window     = window->window,
     };
 
     VkSurfaceKHR surface;
-    vkCreateXcbSurfaceKHR(instance, &info, NULL, &surface);
+    vk_create_xcb_surface_khr(instance, &info, NULL, &surface);
 
     return surface;
 }

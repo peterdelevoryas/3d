@@ -1,7 +1,7 @@
 #ifndef xcb_window_h
 #define xcb_window_h
 #include <xcb/xcb.h>
-#include <vulkan/vulkan.h>
+#include "vulkan.h"
 
 #define WINDOW_SURFACE_EXTENSION "VK_KHR_xcb_surface"
 
