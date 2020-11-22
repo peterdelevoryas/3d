@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.19)
 project(3d)
 find_package(Vulkan REQUIRED)
 
-add_executable(3d main.c)
+add_executable(3d main.c vulkan.c)
 
 if (UNIX AND NOT APPLE)
     target_sources(3d PRIVATE xcb_window.c)
