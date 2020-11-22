@@ -17,7 +17,7 @@ typedef struct {
 } Window;
 
 Window create_window(Device* device, uint32_t width, uint32_t height);
-int    poll_window_events(Window* window);
+int    poll_events(Window* window);
 void   destroy_window(Device* device, Window* window);
 
 #endif

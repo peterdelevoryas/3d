@@ -8,7 +8,7 @@ int main() {
     Swapchain swapchain = create_swapchain(&device, &window);
 
     for (;;) {
-        int quit = poll_window_events(&window);
+        int quit = poll_events(&window);
         if (quit) {
             break;
         }

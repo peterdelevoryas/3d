@@ -57,7 +57,7 @@ Window create_window(Device* device, uint32_t width, uint32_t height) {
     return (Window){ width, height, connection, screen, window, wm_delete_window, surface };
 }
 
-int poll_window_events(Window* window) {
+int poll_events(Window* window) {
     xcb_generic_event_t*        generic_event        = NULL;
     xcb_client_message_event_t* client_message_event = NULL;
     xcb_atom_t                  delete_window_atom   = window->wm_delete_window->atom;
