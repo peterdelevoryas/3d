@@ -281,7 +281,7 @@ static VkBool32 surface_is_supported(VkSurfaceKHR surface, VkPhysicalDevice phys
     return surface_supported;
 }
 
-VulkanContext vk_create_context(Window* window) {
+VkContext vk_create_context(Window* window) {
     VkInstance   instance = create_instance();
     VkSurfaceKHR surface  = create_surface(window, instance);
 
@@ -301,7 +301,7 @@ VulkanContext vk_create_context(Window* window) {
     uint32_t     min_image_count = get_min_image_count(physical_device, surface);
     Swapchain    swapchain       = create_swapchain(device, surface, min_image_count, extent);
 
-    return (VulkanContext){
+    return (VkContext){
         instance, surface, physical_device, queue_family, device, render_pass, swapchain,
     };
 }
@@ -314,7 +314,7 @@ static void destroy_swapchain(VkDevice device, Swapchain* swapchain) {
     }
 }
 
-void vk_destroy_context(VulkanContext* vk) {
+void vk_destroy_context(VkContext* vk) {
     destroy_swapchain(vk->device, &vk->swapchain);
 
     vk_destroy_render_pass(vk->device, vk->render_pass, NULL);

@@ -2,8 +2,8 @@
 #include "vk.h"
 
 int main() {
-    Window        window = create_window(480, 480);
-    VulkanContext vk     = vk_create_context(&window);
+    Window    window = create_window(480, 480);
+    VkContext vk     = vk_create_context(&window);
 
     for (;;) {
         int quit = process_window_messages(&window);
