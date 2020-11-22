@@ -1,17 +1,18 @@
 #include "window.h"
-#include "vk.h"
+#include "render.h"
 
 int main() {
-    Window    window = create_window(480, 480);
-    VkContext vk     = vk_create_context(&window);
+    VkExtent2D extent   = { 480, 480 };
+    Window     window   = Window_create(extent);
+    Renderer   renderer = Renderer_create(&window);
 
     for (;;) {
-        int quit = process_window_messages(&window);
+        int quit = Window_poll_events(&window);
         if (quit) {
             break;
         }
     }
 
-    vk_destroy_context(&vk);
-    destroy_window(&window);
+    Renderer_destroy(&renderer);
+    Window_destroy(&window);
 }

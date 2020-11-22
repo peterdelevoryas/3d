@@ -6,18 +6,17 @@
 #define WINDOW_SURFACE_EXTENSION "VK_KHR_xcb_surface"
 
 typedef struct {
-    uint32_t                 width;
-    uint32_t                 height;
+    VkExtent2D               extent;
     xcb_connection_t*        connection;
     xcb_screen_t*            screen;
     xcb_window_t             window;
     xcb_intern_atom_reply_t* wm_delete_window;
 } Window;
 
-Window create_window(uint32_t width, uint32_t height);
-int    process_window_messages(Window* window);
-void   destroy_window(Window* window);
+Window Window_create(VkExtent2D extent);
+int    Window_poll_events(Window* window);
+void   Window_destroy(Window* window);
 
-VkSurfaceKHR create_surface(Window* window, VkInstance instance);
+VkSurfaceKHR Window_create_surface(Window* window, VkInstance instance);
 
 #endif

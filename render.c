@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "vk.h"
+#include "render.h"
 
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
@@ -281,9 +281,9 @@ static VkBool32 surface_is_supported(VkSurfaceKHR surface, VkPhysicalDevice phys
     return surface_supported;
 }
 
-VkContext vk_create_context(Window* window) {
+Renderer Renderer_create(Window* window) {
     VkInstance   instance = create_instance();
-    VkSurfaceKHR surface  = create_surface(window, instance);
+    VkSurfaceKHR surface  = Window_create_surface(window, instance);
 
     VkPhysicalDevice physical_device = select_physical_device(instance);
     uint32_t         queue_family    = select_queue_family(physical_device);
@@ -297,11 +297,10 @@ VkContext vk_create_context(Window* window) {
     set_object_name(device, SURFACE_KHR, surface, "surface");
 
     VkRenderPass render_pass     = create_render_pass(device);
-    VkExtent2D   extent          = { window->width, window->height };
     uint32_t     min_image_count = get_min_image_count(physical_device, surface);
-    Swapchain    swapchain       = create_swapchain(device, surface, min_image_count, extent);
+    Swapchain    swapchain       = create_swapchain(device, surface, min_image_count, window->extent);
 
-    return (VkContext){
+    return (Renderer){
         instance, surface, physical_device, queue_family, device, render_pass, swapchain,
     };
 }
@@ -314,11 +313,11 @@ static void destroy_swapchain(VkDevice device, Swapchain* swapchain) {
     }
 }
 
-void vk_destroy_context(VkContext* vk) {
-    destroy_swapchain(vk->device, &vk->swapchain);
+void Renderer_destroy(Renderer* r) {
+    destroy_swapchain(r->device, &r->swapchain);
 
-    vk_destroy_render_pass(vk->device, vk->render_pass, NULL);
-    vk_destroy_device(vk->device, NULL);
-    vk_destroy_surface_khr(vk->instance, vk->surface, NULL);
-    vk_destroy_instance(vk->instance, NULL);
+    vk_destroy_render_pass(r->device, r->render_pass, NULL);
+    vk_destroy_device(r->device, NULL);
+    vk_destroy_surface_khr(r->instance, r->surface, NULL);
+    vk_destroy_instance(r->instance, NULL);
 }

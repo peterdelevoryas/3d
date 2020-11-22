@@ -8,7 +8,7 @@ static xcb_intern_atom_reply_t* intern_atom(xcb_connection_t* connection, int on
     return xcb_intern_atom_reply(connection, cookie, NULL);
 }
 
-Window create_window(uint32_t width, uint32_t height) {
+Window Window_create(VkExtent2D extent) {
     xcb_connection_t*     connection     = xcb_connect(NULL, NULL);
     const xcb_setup_t*    setup          = xcb_get_setup(connection);
     xcb_screen_iterator_t roots_iterator = xcb_setup_roots_iterator(setup);
@@ -16,7 +16,7 @@ Window create_window(uint32_t width, uint32_t height) {
     uint32_t              value_mask     = XCB_CW_EVENT_MASK;
     uint32_t              value_list[]   = { XCB_EVENT_MASK_EXPOSURE };
     xcb_window_t          window         = xcb_generate_id(connection);
-    xcb_create_window(connection, XCB_COPY_FROM_PARENT, window, screen->root, 0, 0, width, height, 0,
+    xcb_create_window(connection, XCB_COPY_FROM_PARENT, window, screen->root, 0, 0, extent.width, extent.height, 0,
                       XCB_WINDOW_CLASS_INPUT_OUTPUT, screen->root_visual, value_mask, value_list);
 
     xcb_intern_atom_reply_t* wm_protocols     = intern_atom(connection, 1, "WM_PROTOCOLS");
@@ -27,10 +27,10 @@ Window create_window(uint32_t width, uint32_t height) {
     xcb_map_window(connection, window);
     xcb_flush(connection);
 
-    return (Window){ width, height, connection, screen, window, wm_delete_window };
+    return (Window){ extent, connection, screen, window, wm_delete_window };
 }
 
-int process_window_messages(Window* window) {
+int Window_poll_events(Window* window) {
     xcb_generic_event_t*        generic_event        = NULL;
     xcb_client_message_event_t* client_message_event = NULL;
     xcb_atom_t                  delete_window_atom   = window->wm_delete_window->atom;
@@ -48,12 +48,12 @@ int process_window_messages(Window* window) {
     return 0;
 }
 
-void destroy_window(Window* window) {
+void Window_destroy(Window* window) {
     xcb_destroy_window(window->connection, window->window);
     xcb_disconnect(window->connection);
 }
 
-VkSurfaceKHR create_surface(Window* window, VkInstance instance) {
+VkSurfaceKHR Window_create_surface(Window* window, VkInstance instance) {
     VkXcbSurfaceCreateInfoKHR info = {
         .s_type     = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR,
         .connection = window->connection,

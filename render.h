@@ -20,9 +20,9 @@ typedef struct {
     VkDevice         device;
     VkRenderPass     render_pass;
     Swapchain        swapchain;
-} VkContext;
+} Renderer;
 
-VkContext vk_create_context(Window* window);
-void      vk_destroy_context(VkContext* vk);
+Renderer Renderer_create(Window* window);
+void     Renderer_destroy(Renderer* r);
 
 #endif
