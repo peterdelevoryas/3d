@@ -9,6 +9,7 @@ typedef struct {
     VkPhysicalDevice physical_device;
     uint32_t         queue_family;
     VkDevice         device;
+    VkRenderPass     render_pass;
 } VulkanContext;
 
 VulkanContext create_vulkan_context(Window* window);

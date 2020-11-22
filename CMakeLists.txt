@@ -12,4 +12,4 @@ else()
 endif()
 
 target_link_libraries(3d Vulkan::Vulkan)
-target_compile_options(3d PUBLIC -ffast-math -Wall)
+target_compile_options(3d PUBLIC -ffast-math -Wall -g)

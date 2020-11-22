@@ -63,32 +63,146 @@ static uint32_t select_queue_family(VkPhysicalDevice physical_device) {
     return queue_family;
 }
 
+#define DECL_PFN(func) PFN_##func func
+
+static struct { DECL_PFN(vkDebugMarkerSetObjectNameEXT); } pfn;
+
+#define INIT_PFN(device, func) pfn.func = (PFN_##func) vkGetDeviceProcAddr(device, #func);
+
+static void initialize_extension_function_pointers(VkDevice device) {
+    INIT_PFN(device, vkDebugMarkerSetObjectNameEXT);
+}
+
+#define set_object_name(device, type, object, name)                                                                    \
+    set_object_name_(device, VK_DEBUG_REPORT_OBJECT_TYPE_##type##_EXT, (uint64_t) object, name)
+
+static void set_object_name_(VkDevice device, VkDebugReportObjectTypeEXT type, uint64_t object, const char* name) {
+    VkDebugMarkerObjectNameInfoEXT object_name = {
+        .sType       = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT,
+        .objectType  = type,
+        .object      = object,
+        .pObjectName = name,
+    };
+    pfn.vkDebugMarkerSetObjectNameEXT(device, &object_name);
+}
+
 static VkDevice create_logical_device(VkPhysicalDevice physical_device, uint32_t queue_family) {
     VkPhysicalDeviceFeatures features;
     vkGetPhysicalDeviceFeatures(physical_device, &features);
 
-    const char* extensions[] = { "VK_KHR_swapchain" };
-    float queue_priority = 0.0f;
-    VkDeviceQueueCreateInfo queue_info = {
-        .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+    const char* extensions[] = {
+        "VK_KHR_swapchain",
+        "VK_EXT_debug_marker",
+    };
+    float                   queue_priority = 0.0f;
+    VkDeviceQueueCreateInfo queue_info     = {
+        .sType            = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
         .queueFamilyIndex = queue_family,
-        .queueCount = 1,
+        .queueCount       = 1,
         .pQueuePriorities = &queue_priority,
     };
 
     VkDeviceCreateInfo info = {
-        .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
-        .queueCreateInfoCount = 1,
-        .pQueueCreateInfos = &queue_info,
-        .enabledExtensionCount = ARRAY_SIZE(extensions),
+        .sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+        .queueCreateInfoCount    = 1,
+        .pQueueCreateInfos       = &queue_info,
+        .enabledExtensionCount   = ARRAY_SIZE(extensions),
         .ppEnabledExtensionNames = extensions,
-        .pEnabledFeatures = &features,
+        .pEnabledFeatures        = &features,
     };
 
     VkDevice device;
     vkCreateDevice(physical_device, &info, NULL, &device);
 
     return device;
+}
+
+static VkRenderPass create_render_pass(VkDevice device) {
+    VkAttachmentDescription color_attachment = {
+        .flags          = 0,
+        .format         = VK_FORMAT_B8G8R8A8_UNORM,
+        .samples        = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout    = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+
+    VkAttachmentDescription depth_attachment = {
+        .flags          = 0,
+        .format         = VK_FORMAT_D16_UNORM,
+        .samples        = VK_SAMPLE_COUNT_1_BIT,
+        .loadOp         = VK_ATTACHMENT_LOAD_OP_CLEAR,
+        .storeOp        = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+        .initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED,
+        .finalLayout    = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+    };
+
+    VkAttachmentDescription attachments[] = { color_attachment, depth_attachment };
+
+    VkAttachmentReference color_reference = {
+        .attachment = 0,
+        .layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+    };
+
+    VkAttachmentReference depth_reference = {
+        .attachment = 1,
+        .layout     = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+    };
+
+    VkAttachmentReference color_references[] = { color_reference };
+
+    VkSubpassDescription subpass = {
+        .pipelineBindPoint       = VK_PIPELINE_BIND_POINT_GRAPHICS,
+        .colorAttachmentCount    = ARRAY_SIZE(color_references),
+        .pColorAttachments       = color_references,
+        .pResolveAttachments     = NULL,
+        .pDepthStencilAttachment = &depth_reference,
+    };
+
+    VkSubpassDescription subpasses[] = { subpass };
+
+    VkSubpassDependency bottom_of_pipe_dependency = {
+        .srcSubpass      = VK_SUBPASS_EXTERNAL,
+        .dstSubpass      = 0,
+        .srcStageMask    = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        .dstStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .srcAccessMask   = VK_ACCESS_MEMORY_READ_BIT,
+        .dstAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT,
+    };
+
+    VkSubpassDependency top_of_pipe_dependency = {
+        .srcSubpass      = 0,
+        .dstSubpass      = VK_SUBPASS_EXTERNAL,
+        .srcStageMask    = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dstStageMask    = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        .srcAccessMask   = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .dstAccessMask   = VK_ACCESS_MEMORY_READ_BIT,
+        .dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT,
+    };
+
+    VkSubpassDependency dependencies[] = { bottom_of_pipe_dependency, top_of_pipe_dependency };
+
+    VkRenderPassCreateInfo info = {
+        .sType           = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+        .attachmentCount = ARRAY_SIZE(attachments),
+        .pAttachments    = attachments,
+        .subpassCount    = ARRAY_SIZE(subpasses),
+        .pSubpasses      = subpasses,
+        .dependencyCount = ARRAY_SIZE(dependencies),
+        .pDependencies   = dependencies,
+    };
+
+    VkRenderPass render_pass;
+    vkCreateRenderPass(device, &info, NULL, &render_pass);
+    set_object_name(device, RENDER_PASS, render_pass, "render_pass");
+
+    return render_pass;
 }
 
 VulkanContext create_vulkan_context(Window* window) {
@@ -98,16 +212,18 @@ VulkanContext create_vulkan_context(Window* window) {
     uint32_t         queue_family    = select_queue_family(physical_device);
     VkDevice         device          = create_logical_device(physical_device, queue_family);
 
+    initialize_extension_function_pointers(device);
+    set_object_name(device, DEVICE, device, "device");
+
+    VkRenderPass render_pass = create_render_pass(device);
+
     return (VulkanContext){
-        instance,
-        surface,
-        physical_device,
-        queue_family,
-        device,
+        instance, surface, physical_device, queue_family, device, render_pass,
     };
 }
 
 void destroy_vulkan_context(VulkanContext* vk) {
+    vkDestroyRenderPass(vk->device, vk->render_pass, NULL);
     vkDestroyDevice(vk->device, NULL);
     vkDestroySurfaceKHR(vk->instance, vk->surface, NULL);
     vkDestroyInstance(vk->instance, NULL);

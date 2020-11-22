@@ -57,9 +57,9 @@ void destroy_window(Window* window) {
 
 VkSurfaceKHR create_surface(Window* window, VkInstance instance) {
     VkXcbSurfaceCreateInfoKHR info = {
-        .sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR,
+        .sType      = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR,
         .connection = window->connection,
-        .window = window->window,
+        .window     = window->window,
     };
 
     VkSurfaceKHR surface;
