@@ -10,8 +10,8 @@ static uint32_t get_min_image_count(VkPhysicalDevice physical_device, VkSurfaceK
     return capabilities.min_image_count;
 }
 
-Swapchain create_swapchain(const Device* device, const Window* window) {
-    uint32_t min_image_count = get_min_image_count(device->physical_device, window->surface);
+Swapchain create_swapchain(const GPU* gpu, const Window* window) {
+    uint32_t min_image_count = get_min_image_count(gpu->physical_device, window->surface);
     assert(min_image_count <= SWAPCHAIN_MAX_IMAGE_COUNT);
 
     VkSwapchainCreateInfoKHR info = {
@@ -31,17 +31,17 @@ Swapchain create_swapchain(const Device* device, const Window* window) {
     };
 
     Swapchain swapchain = {};
-    vk_create_swapchain_khr(device->handle, &info, NULL, &swapchain.handle);
-    set_debug_name(device, SWAPCHAIN_KHR, swapchain.handle, "swapchain");
+    vk_create_swapchain_khr(gpu->device, &info, NULL, &swapchain.handle);
+    set_debug_name(gpu, SWAPCHAIN_KHR, swapchain.handle, "swapchain");
 
-    vk_get_swapchain_images_khr(device->handle, swapchain.handle, &swapchain.image_count, NULL);
+    vk_get_swapchain_images_khr(gpu->device, swapchain.handle, &swapchain.image_count, NULL);
     assert(swapchain.image_count < SWAPCHAIN_MAX_IMAGE_COUNT);
 
-    vk_get_swapchain_images_khr(device->handle, swapchain.handle, &swapchain.image_count, &swapchain.images[0]);
+    vk_get_swapchain_images_khr(gpu->device, swapchain.handle, &swapchain.image_count, &swapchain.images[0]);
     for (uint32_t i = 0; i < swapchain.image_count; i++) {
         char name[32];
         sprintf(name, "swapchain.images[%u]", i);
-        set_debug_name(device, IMAGE, swapchain.images[i], name);
+        set_debug_name(gpu, IMAGE, swapchain.images[i], name);
     }
 
     for (uint32_t i = 0; i < swapchain.image_count; i++) {
@@ -66,20 +66,20 @@ Swapchain create_swapchain(const Device* device, const Window* window) {
             .view_type         = VK_IMAGE_VIEW_TYPE_2D,
             .image             = swapchain.images[i],
         };
-        vk_create_image_view(device->handle, &view_info, NULL, &swapchain.views[i]);
+        vk_create_image_view(gpu->device, &view_info, NULL, &swapchain.views[i]);
 
         char name[32];
         sprintf(name, "swapchain.views[%u]", i);
-        set_debug_name(device, IMAGE_VIEW, swapchain.views[i], name);
+        set_debug_name(gpu, IMAGE_VIEW, swapchain.views[i], name);
     }
 
     return swapchain;
 }
 
-void destroy_swapchain(Device* device, Swapchain* swapchain) {
+void destroy_swapchain(GPU* gpu, Swapchain* swapchain) {
     for (uint32_t i = 0; i < swapchain->image_count; i++) {
-        vk_destroy_image_view(device->handle, swapchain->views[i], NULL);
+        vk_destroy_image_view(gpu->device, swapchain->views[i], NULL);
     }
 
-    vk_destroy_swapchain_khr(device->handle, swapchain->handle, NULL);
+    vk_destroy_swapchain_khr(gpu->device, swapchain->handle, NULL);
 }

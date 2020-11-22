@@ -4,7 +4,7 @@
 
 #define VK_USE_PLATFORM_XCB_KHR
 #include "vulkan.h"
-#include "device.h"
+#include "gpu.h"
 
 typedef struct {
     uint32_t                 width;
@@ -16,8 +16,8 @@ typedef struct {
     VkSurfaceKHR             surface;
 } Window;
 
-Window create_window(Device* device, uint32_t width, uint32_t height);
+Window create_window(GPU* gpu, uint32_t width, uint32_t height);
 int    poll_events(Window* window);
-void   destroy_window(Device* device, Window* window);
+void   destroy_window(GPU* gpu, Window* window);
 
 #endif

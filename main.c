@@ -1,11 +1,11 @@
 #include "window.h"
-#include "device.h"
+#include "gpu.h"
 #include "swapchain.h"
 
 int main() {
-    Device    device    = create_device();
-    Window    window    = create_window(&device, 480, 480);
-    Swapchain swapchain = create_swapchain(&device, &window);
+    GPU       gpu       = create_gpu();
+    Window    window    = create_window(&gpu, 480, 480);
+    Swapchain swapchain = create_swapchain(&gpu, &window);
 
     for (;;) {
         int quit = poll_events(&window);
@@ -14,7 +14,7 @@ int main() {
         }
     }
 
-    destroy_swapchain(&device, &swapchain);
-    destroy_window(&device, &window);
-    destroy_device(&device);
+    destroy_swapchain(&gpu, &swapchain);
+    destroy_window(&gpu, &window);
+    destroy_gpu(&gpu);
 }

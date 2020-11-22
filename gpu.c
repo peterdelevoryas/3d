@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "device.h"
+#include "gpu.h"
 
 #if __linux__
 #define WINDOW_SURFACE_EXTENSION "VK_KHR_xcb_surface"
@@ -77,14 +77,14 @@ static void init_fn_ptrs(VkDevice device) {
     pfn.vk_debug_marker_set_object_name_ext = (void*) vk_get_device_proc_addr(device, "vkDebugMarkerSetObjectNameEXT");
 }
 
-void set_debug_name_(const Device* device, VkDebugReportObjectTypeEXT type, uint64_t object, const char* name) {
+void set_debug_name_(const GPU* gpu, VkDebugReportObjectTypeEXT type, uint64_t object, const char* name) {
     VkDebugMarkerObjectNameInfoEXT object_name = {
         .s_type        = VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT,
         .object_type   = type,
         .object        = object,
         .p_object_name = name,
     };
-    pfn.vk_debug_marker_set_object_name_ext(device->handle, &object_name);
+    pfn.vk_debug_marker_set_object_name_ext(gpu->device, &object_name);
 }
 
 static VkDevice create_logical_device(VkPhysicalDevice physical_device, uint32_t queue_family) {
@@ -229,29 +229,29 @@ static VkImage create_depth_image(VkDevice device, VkExtent2D extent) {
     return image;
 }
 
-Device create_device() {
+GPU create_gpu() {
     VkInstance       instance        = create_instance();
     VkPhysicalDevice physical_device = select_physical_device(instance);
     uint32_t         queue_family    = select_queue_family(physical_device);
-    VkDevice         handle          = create_logical_device(physical_device, queue_family);
+    VkDevice         device          = create_logical_device(physical_device, queue_family);
 
-    init_fn_ptrs(handle);
+    init_fn_ptrs(device);
 
-    Device device = {
+    GPU gpu = {
         instance,
         physical_device,
         queue_family,
-        handle,
+        device,
     };
 
-    set_debug_name(&device, INSTANCE, device.instance, "instance");
-    set_debug_name(&device, PHYSICAL_DEVICE, device.physical_device, "physical_device");
-    set_debug_name(&device, DEVICE, device.handle, "device");
+    set_debug_name(&gpu, INSTANCE, gpu.instance, "instance");
+    set_debug_name(&gpu, PHYSICAL_DEVICE, gpu.physical_device, "physical_device");
+    set_debug_name(&gpu, DEVICE, gpu.device, "device");
 
-    return device;
+    return gpu;
 }
 
-void destroy_device(Device* device) {
-    vk_destroy_device(device->handle, NULL);
-    vk_destroy_instance(device->instance, NULL);
+void destroy_gpu(GPU* gpu) {
+    vk_destroy_device(gpu->device, NULL);
+    vk_destroy_instance(gpu->instance, NULL);
 }

@@ -8,7 +8,7 @@ static xcb_intern_atom_reply_t* intern_atom(xcb_connection_t* connection, int on
     return xcb_intern_atom_reply(connection, cookie, NULL);
 }
 
-static VkSurfaceKHR create_surface(const Device* device, xcb_connection_t* connection, xcb_window_t window) {
+static VkSurfaceKHR create_surface(const GPU* gpu, xcb_connection_t* connection, xcb_window_t window) {
     VkXcbSurfaceCreateInfoKHR info = {
         .s_type     = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR,
         .connection = connection,
@@ -16,21 +16,20 @@ static VkSurfaceKHR create_surface(const Device* device, xcb_connection_t* conne
     };
 
     VkSurfaceKHR surface;
-    vk_create_xcb_surface_khr(device->instance, &info, NULL, &surface);
+    vk_create_xcb_surface_khr(gpu->instance, &info, NULL, &surface);
 
-    set_debug_name(device, SURFACE_KHR, surface, "surface");
+    set_debug_name(gpu, SURFACE_KHR, surface, "surface");
 
     return surface;
 }
 
-static VkBool32 surface_supported(const Device* device, VkSurfaceKHR surface) {
+static VkBool32 surface_supported(const GPU* gpu, VkSurfaceKHR surface) {
     VkBool32 surface_supported = VK_FALSE;
-    vk_get_physical_device_surface_support_khr(device->physical_device, device->queue_family, surface,
-                                               &surface_supported);
+    vk_get_physical_device_surface_support_khr(gpu->physical_device, gpu->queue_family, surface, &surface_supported);
     return surface_supported;
 }
 
-Window create_window(Device* device, uint32_t width, uint32_t height) {
+Window create_window(GPU* gpu, uint32_t width, uint32_t height) {
     xcb_connection_t*     connection     = xcb_connect(NULL, NULL);
     const xcb_setup_t*    setup          = xcb_get_setup(connection);
     xcb_screen_iterator_t roots_iterator = xcb_setup_roots_iterator(setup);
@@ -49,10 +48,10 @@ Window create_window(Device* device, uint32_t width, uint32_t height) {
     xcb_map_window(connection, window);
     xcb_flush(connection);
 
-    VkSurfaceKHR surface = create_surface(device, connection, window);
-    assert(surface_supported(device, surface));
+    VkSurfaceKHR surface = create_surface(gpu, connection, window);
+    assert(surface_supported(gpu, surface));
 
-    set_debug_name(device, SURFACE_KHR, surface, "surface");
+    set_debug_name(gpu, SURFACE_KHR, surface, "surface");
 
     return (Window){ width, height, connection, screen, window, wm_delete_window, surface };
 }
@@ -75,8 +74,8 @@ int poll_events(Window* window) {
     return 0;
 }
 
-void destroy_window(Device* device, Window* window) {
-    vk_destroy_surface_khr(device->instance, window->surface, NULL);
+void destroy_window(GPU* gpu, Window* window) {
+    vk_destroy_surface_khr(gpu->instance, window->surface, NULL);
     xcb_destroy_window(window->connection, window->window);
     xcb_disconnect(window->connection);
 }

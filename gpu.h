@@ -1,5 +1,5 @@
-#ifndef device_h
-#define device_h
+#ifndef gpu_h
+#define gpu_h
 #include "vulkan.h"
 
 #define set_debug_name(device, type, object, name)                                                                     \
@@ -9,11 +9,11 @@ typedef struct {
     VkInstance       instance;
     VkPhysicalDevice physical_device;
     uint32_t         queue_family;
-    VkDevice         handle;
-} Device;
+    VkDevice         device;
+} GPU;
 
-Device create_device();
-void   destroy_device(Device* device);
-void   set_debug_name_(const Device* device, VkDebugReportObjectTypeEXT type, uint64_t object, const char* name);
+GPU  create_gpu();
+void destroy_gpu(GPU* gpu);
+void set_debug_name_(const GPU* gpu, VkDebugReportObjectTypeEXT type, uint64_t object, const char* name);
 
 #endif
