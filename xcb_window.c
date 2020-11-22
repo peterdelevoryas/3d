@@ -30,18 +30,18 @@ Window create_window(uint32_t width, uint32_t height) {
 }
 
 int process_window_messages(Window* window) {
-    xcb_generic_event_t* generic_event = NULL;
+    xcb_generic_event_t*        generic_event        = NULL;
     xcb_client_message_event_t* client_message_event = NULL;
-    xcb_atom_t delete_window_atom = window->wm_delete_window->atom;
+    xcb_atom_t                  delete_window_atom   = window->wm_delete_window->atom;
 
     while ((generic_event = xcb_poll_for_event(window->connection))) {
         switch (XCB_EVENT_RESPONSE_TYPE(generic_event)) {
-        case XCB_CLIENT_MESSAGE:
-            client_message_event = (xcb_client_message_event_t*)generic_event;
-            if (client_message_event->data.data32[0] == delete_window_atom) {
-                return 1;
-            }
-            break;
+            case XCB_CLIENT_MESSAGE:
+                client_message_event = (xcb_client_message_event_t*) generic_event;
+                if (client_message_event->data.data32[0] == delete_window_atom) {
+                    return 1;
+                }
+                break;
         }
     }
     return 0;
