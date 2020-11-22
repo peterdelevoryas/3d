@@ -5,6 +5,7 @@
 typedef struct {
     VkInstance       instance;
     VkPhysicalDevice physical_device;
+    uint32_t         queue_family;
 } VulkanContext;
 
 VulkanContext create_vulkan_context();

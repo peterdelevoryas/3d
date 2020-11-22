@@ -44,11 +44,35 @@ static VkPhysicalDevice select_physical_device(VkInstance instance) {
     return physical_device;
 }
 
-VulkanContext create_vulkan_context() {
-    VulkanContext vk = {};
+static uint32_t select_queue_family(VkPhysicalDevice physical_device) {
+    uint32_t count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &count, NULL);
+    assert(count);
 
+    VkQueueFamilyProperties* queue_families = NULL;
+    queue_families                          = malloc(sizeof(*queue_families) * count);
+    vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &count, queue_families);
+
+    uint32_t queue_family = UINT32_MAX;
+    for (uint32_t i = 0; i < count; i++) {
+        VkQueueFlagBits flags = queue_families[i].queueFlags;
+        if (flags & VK_QUEUE_GRAPHICS_BIT && flags && VK_QUEUE_TRANSFER_BIT) {
+            assert(queue_families[i].queueCount);
+            queue_family = i;
+            break;
+        }
+    }
+    free(queue_families);
+
+    printf("Selected queue family %u\n", queue_family);
+    return queue_family;
+}
+
+VulkanContext create_vulkan_context() {
+    VulkanContext vk   = {};
     vk.instance        = create_instance();
     vk.physical_device = select_physical_device(vk.instance);
+    vk.queue_family    = select_queue_family(vk.physical_device);
 
     return vk;
 }
