@@ -231,16 +231,20 @@ static VkSwapchainKHR create_swapchain(VkDevice device, VkSurfaceKHR surface, Vk
     return swapchain;
 }
 
+static VkBool32 surface_is_supported(VkSurfaceKHR surface, VkPhysicalDevice physical_device, uint32_t queue_family) {
+    VkBool32 surface_supported = VK_FALSE;
+    vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, queue_family, surface, &surface_supported);
+    return surface_supported;
+}
+
 VulkanContext create_vulkan_context(Window* window) {
-    VkInstance       instance        = create_instance();
-    VkSurfaceKHR     surface         = create_surface(window, instance);
+    VkInstance   instance = create_instance();
+    VkSurfaceKHR surface  = create_surface(window, instance);
 
     VkPhysicalDevice physical_device = select_physical_device(instance);
     uint32_t         queue_family    = select_queue_family(physical_device);
 
-    VkBool32 surface_supported = VK_FALSE;
-    vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, queue_family, surface, &surface_supported);
-    assert(surface_supported);
+    assert(surface_is_supported(surface, physical_device, queue_family));
 
     VkDevice device = create_logical_device(physical_device, queue_family);
 
