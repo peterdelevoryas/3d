@@ -15,7 +15,6 @@ typedef struct {
 #define MAX_BLOCKS 8
 
 typedef struct {
-    const char* name;
     uint32_t    memory_type;
     MemoryBlock blocks[MAX_BLOCKS];
     uint32_t    block_count;

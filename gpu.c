@@ -235,12 +235,13 @@ GPU gpu_create() {
     uint32_t device_local_memory = find_memory_type(physical_device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     uint32_t host_visible_memory =
         find_memory_type(physical_device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    printf("Device local memory type index %u\n", device_local_memory);
+    printf("Host visible memory type index %u\n", host_visible_memory);
+
     MemoryHeap device_local_heap = {
-        .name        = "Device local",
         .memory_type = device_local_memory,
     };
     MemoryHeap host_visible_heap = {
-        .name        = "Host visible",
         .memory_type = host_visible_memory,
     };
 
@@ -331,7 +332,7 @@ MemoryBlock gpu_allocate_memory(GPU* gpu, MemoryHeap* heap, const VkMemoryRequir
 
     static uint32_t i = 0;
     char            name[32];
-    sprintf(name, "%s memory heap, block %u\n", heap->name, i);
+    sprintf(name, "Memory type %u, block %u\n", heap->memory_type, i);
     gpu_set_debug_name(gpu, DEVICE_MEMORY, memory, name);
     i++;
 
