@@ -25,6 +25,7 @@ typedef struct {
     VkPhysicalDevice physical_device;
     uint32_t         queue_family;
     VkDevice         device;
+    VkQueue          queue;
 
     MemoryHeap device_local_heap;
     MemoryHeap host_visible_heap;

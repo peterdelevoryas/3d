@@ -133,7 +133,7 @@ VkRenderPass gpu_create_render_pass(GPU* gpu) {
         .stencil_load_op  = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
         .stencil_store_op = VK_ATTACHMENT_STORE_OP_DONT_CARE,
         .initial_layout   = VK_IMAGE_LAYOUT_UNDEFINED,
-        .final_layout     = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .final_layout     = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
     };
 
     VkAttachmentDescription depth_attachment = {
@@ -232,6 +232,9 @@ GPU gpu_create() {
     uint32_t         queue_family    = select_queue_family(physical_device);
     VkDevice         device          = create_logical_device(physical_device, queue_family);
 
+    VkQueue queue;
+    vk_get_device_queue(device, queue_family, 0, &queue);
+
     uint32_t device_local_memory = find_memory_type(physical_device, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     uint32_t host_visible_memory =
         find_memory_type(physical_device, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -246,7 +249,7 @@ GPU gpu_create() {
     };
 
     GPU gpu = {
-        instance, physical_device, queue_family, device, device_local_heap, host_visible_heap,
+        instance, physical_device, queue_family, device, queue, device_local_heap, host_visible_heap,
     };
 
     gpu_set_debug_name(&gpu, INSTANCE, gpu.instance, "Instance");

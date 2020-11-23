@@ -151,7 +151,7 @@ static VkPipeline gpu_create_pipeline(GPU* gpu, Window* window, VkShaderModule v
         .rasterizer_discard_enable  = VK_FALSE,
         .polygon_mode               = VK_POLYGON_MODE_FILL,
         .cull_mode                  = VK_CULL_MODE_BACK_BIT,
-        .front_face                 = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+        .front_face                 = VK_FRONT_FACE_CLOCKWISE,
         .depth_bias_enable          = VK_FALSE,
         .depth_bias_constant_factor = 0,
         .depth_bias_clamp           = 0,
@@ -246,6 +246,13 @@ static VkPipeline gpu_create_pipeline(GPU* gpu, Window* window, VkShaderModule v
     return pipeline;
 }
 
+typedef struct {
+    VkSemaphore     image_acquired;
+    VkSemaphore     commands_complete;
+    VkFence         commands_complete_fence;
+    VkCommandBuffer cmd;
+} Frame;
+
 int main() {
     GPU       gpu       = gpu_create();
     Window    window    = create_window(&gpu, 480, 480);
@@ -298,12 +305,121 @@ int main() {
 
     VkPipeline pipeline = gpu_create_pipeline(&gpu, &window, basic_vert, basic_frag, pipeline_layout, render_pass);
 
+    VkCommandPoolCreateInfo command_pool_info = {
+        .s_type             = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .flags              = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+        .queue_family_index = gpu.queue_family,
+    };
+    VkCommandPool command_pool;
+    vk_create_command_pool(gpu.device, &command_pool_info, NULL, &command_pool);
+
+    Frame frames[SWAPCHAIN_MAX_IMAGE_COUNT];
+    for (uint32_t i = 0; i < swapchain.image_count; i++) {
+        VkSemaphoreCreateInfo semaphore_info = {
+            .s_type = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+        };
+        vk_create_semaphore(gpu.device, &semaphore_info, NULL, &frames[i].image_acquired);
+        vk_create_semaphore(gpu.device, &semaphore_info, NULL, &frames[i].commands_complete);
+
+        VkFenceCreateInfo fence_info = {
+            .s_type = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+            .flags  = VK_FENCE_CREATE_SIGNALED_BIT,
+        };
+        vk_create_fence(gpu.device, &fence_info, NULL, &frames[i].commands_complete_fence);
+    }
+
+    VkCommandBuffer             cmds[SWAPCHAIN_MAX_IMAGE_COUNT];
+    VkCommandBufferAllocateInfo cmd_info = {
+        .s_type               = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .command_pool         = command_pool,
+        .level                = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .command_buffer_count = swapchain.image_count,
+    };
+    vk_allocate_command_buffers(gpu.device, &cmd_info, &cmds[0]);
+
+    uint32_t frame_index                                     = 0;
+    VkFence  image_command_fences[SWAPCHAIN_MAX_IMAGE_COUNT] = {};
     for (;;) {
         int quit = poll_events(&window);
         if (quit) {
             break;
         }
+
+        Frame* frame = &frames[frame_index];
+
+        vk_wait_for_fences(gpu.device, 1, &frame->commands_complete_fence, VK_TRUE, UINT64_MAX);
+
+        uint32_t image_index;
+        vk_acquire_next_image_khr(gpu.device, swapchain.handle, UINT64_MAX, frame->image_acquired, VK_NULL_HANDLE,
+                                  &image_index);
+
+        vk_reset_command_buffer(cmds[frame_index], 0);
+        VkCommandBufferBeginInfo begin_info = {
+            .s_type = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+        };
+        vk_begin_command_buffer(cmds[frame_index], &begin_info);
+        VkClearValue          clear_color     = { .color = {
+                                         .float32 = { 0.0f, 0.0f, 0.0f, 0.0f },
+                                     } };
+        VkClearValue          clear_depth     = { .depth_stencil = { .depth = 1.0f, .stencil = 0 } };
+        VkClearValue          clear_values[]  = { clear_color, clear_depth };
+        VkRenderPassBeginInfo pass_begin_info = {
+            .s_type            = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+            .render_pass       = render_pass,
+            .framebuffer       = framebuffers[image_index],
+            .render_area       = { { 0, 0 }, { window.width, window.height } },
+            .clear_value_count = ARRAY_SIZE(clear_values),
+            .p_clear_values    = clear_values,
+        };
+        vk_cmd_begin_render_pass(cmds[frame_index], &pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vk_cmd_bind_pipeline(cmds[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        Mat4 mvp = {
+            2.159338,  0.279808, 0.432150, 0.431934, 0.000000, 2.331730, -0.259290, -0.259161,
+            -1.079669, 0.559615, 0.864301, 0.863868, 0.000000, 0.000000, 11.531581, 11.575838,
+        };
+
+        vk_cmd_push_constants(cmds[frame_index], pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Mat4), &mvp);
+        VkBuffer     vertex_buffers[]        = { cube_buffer };
+        VkDeviceSize vertex_buffer_offsets[] = { 0 };
+        vk_cmd_bind_vertex_buffers(cmds[frame_index], 0, ARRAY_SIZE(vertex_buffers), vertex_buffers,
+                                   vertex_buffer_offsets);
+        vk_cmd_draw(cmds[frame_index], 12 * 3, 1, 0, 0);
+        vk_cmd_end_render_pass(cmds[frame_index]);
+        vk_end_command_buffer(cmds[frame_index]);
+
+        if (image_command_fences[image_index])
+            vk_wait_for_fences(gpu.device, 1, &image_command_fences[image_index], VK_TRUE, UINT64_MAX);
+
+        vk_reset_fences(gpu.device, 1, &frame->commands_complete_fence);
+
+        VkPipelineStageFlags wait_dst_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        VkSubmitInfo         submit_info    = {
+            .s_type                 = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .wait_semaphore_count   = 1,
+            .p_wait_semaphores      = &frame->image_acquired,
+            .p_wait_dst_stage_mask  = &wait_dst_stage,
+            .command_buffer_count   = 1,
+            .p_command_buffers      = &cmds[frame_index],
+            .signal_semaphore_count = 1,
+            .p_signal_semaphores    = &frame->commands_complete,
+        };
+        vk_queue_submit(gpu.queue, 1, &submit_info, frame->commands_complete_fence);
+        image_command_fences[image_index] = frame->commands_complete_fence;
+
+        VkPresentInfoKHR present_info = {
+            .s_type               = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .wait_semaphore_count = 1,
+            .p_wait_semaphores    = &frame->commands_complete,
+            .swapchain_count      = 1,
+            .p_swapchains         = &swapchain.handle,
+            .p_image_indices      = &image_index,
+        };
+        vk_queue_present_khr(gpu.queue, &present_info);
+
+        frame_index = (frame_index + 1) % swapchain.image_count;
     }
+
+    vk_device_wait_idle(gpu.device);
 
     vk_destroy_shader_module(gpu.device, basic_vert, NULL);
     vk_destroy_shader_module(gpu.device, basic_frag, NULL);
