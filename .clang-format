@@ -11,7 +11,7 @@ BreakBeforeBraces: Attach
 BreakBeforeTernaryOperators: true
 BreakBeforeBinaryOperators: NonAssignment
 Cpp11BracedListStyle: false
-IndentCaseLabels: true
+IndentCaseLabels: false
 UseTab: Never
 
 PointerAlignment: Left

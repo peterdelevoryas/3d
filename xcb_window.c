@@ -63,12 +63,12 @@ int poll_events(Window* window) {
 
     while ((generic_event = xcb_poll_for_event(window->connection))) {
         switch (XCB_EVENT_RESPONSE_TYPE(generic_event)) {
-            case XCB_CLIENT_MESSAGE:
-                client_message_event = (xcb_client_message_event_t*) generic_event;
-                if (client_message_event->data.data32[0] == delete_window_atom) {
-                    return 1;
-                }
-                break;
+        case XCB_CLIENT_MESSAGE:
+            client_message_event = (xcb_client_message_event_t*) generic_event;
+            if (client_message_event->data.data32[0] == delete_window_atom) {
+                return 1;
+            }
+            break;
         }
     }
     return 0;
